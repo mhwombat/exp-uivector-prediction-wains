@@ -1,0 +1,144 @@
+name:                creatur-wains-prediction
+version:             1.0
+synopsis:            Agent for predicting the future.
+description:         ALife agent that competes with other
+                     agents to predict the future.
+homepage:            https://github.com/mhwombat/creatur-wains-prediction
+license:             BSD3
+license-file:        LICENSE
+author:              Amy de Buitléir
+maintainer:          amy@nualeargais.ie
+copyright:           (c) Amy de Buitléir 2013-2015
+category:            Data
+build-type:          Simple
+cabal-version:       >=1.8
+
+source-repository head
+  type:     git
+  location: https://github.com/mhwombat/creatur-wains-prediction.git
+
+source-repository this
+  type:     git
+  location: https://github.com/mhwombat/creatur-wains-prediction.git
+  tag:      1.0
+
+executable prediction-daemon
+  main-is:          ALife/Creatur/Wain/Prediction/Daemon.hs
+  ghc-options:      -Wall -Werror -O2 -rtsopts -threaded
+  build-depends:    app-settings ==0.2.* && >=0.2.0.5,
+                    array ==0.5.*,
+                    base >=4.8 && <5,
+                    bytestring ==0.10.*,
+                    cereal ==0.4.*,
+                    colour ==2.3.*,
+                    cond ==0.4.*,
+                    containers ==0.5.*,
+                    creatur ==5.9.5,
+                    creatur-wains ==7.3.4,
+                    directory ==1.2.*,
+                    filepath ==1.4.*,
+                    hdaemonize ==0.5.*,
+                    lens ==4.9.*,
+                    MonadRandom ==0.3.*,
+                    mtl ==2.2.*,
+                    old-locale ==1.0.*,
+                    random ==1.1.*,
+                    som ==8.0.*,
+                    split ==0.2.*,
+                    text ==1.2.*,
+                    time ==1.4.* || ==1.5.*,
+                    transformers ==0.4.*,
+                    unix ==2.7.*,
+                    vector ==0.10.*,
+                    zlib ==0.5.*
+  hs-source-dirs:   src
+
+executable prediction-init
+  main-is:          ALife/Creatur/Wain/Prediction/GeneratePopulation.hs
+  ghc-options:      -Wall -Werror -O2 -rtsopts -threaded
+  build-depends:
+                    app-settings ==0.2.* && >=0.2.0.5,
+                    array ==0.5.*,
+                    base >=4.8 && <5,
+                    cereal ==0.4.*,
+                    cond ==0.4.*,
+                    colour ==2.3.*,
+                    containers ==0.5.*,
+                    creatur ==5.9.5,
+                    creatur-wains ==7.3.4,
+                    directory ==1.2.*,
+                    filepath ==1.4.*,
+                    lens ==4.9.*,
+                    MonadRandom ==0.3.*,
+                    mtl ==2.2.*,
+                    old-locale ==1.0.*,
+                    random ==1.1.*,
+                    som ==8.0.*,
+                    split ==0.2.*,
+                    time ==1.4.* || ==1.5.*,
+                    transformers ==0.4.*,
+                    unix ==2.7.*,
+                    vector ==0.10.*,
+                    zlib ==0.5.*
+  hs-source-dirs:   src
+
+executable prediction-examine
+  main-is:          ALife/Creatur/Wain/Prediction/ExamineAgent.hs
+  ghc-options:      -Wall -Werror
+  build-depends:
+                    app-settings ==0.2.* && >=0.2.0.5,
+                    array ==0.5.*,
+                    base >=4.8 && <5,
+                    cereal ==0.4.*,
+                    colour ==2.3.*,
+                    cond ==0.4.*,
+                    containers ==0.5.*,
+                    creatur ==5.9.5,
+                    creatur-wains ==7.3.4,
+                    directory ==1.2.*,
+                    filepath ==1.4.*,
+                    lens ==4.9.*,
+                    MonadRandom ==0.3.*,
+                    mtl ==2.2.*,
+                    old-locale ==1.0.*,
+                    random ==1.1.*,
+                    som ==8.0.*,
+                    split ==0.2.*,
+                    time ==1.4.* || ==1.5.*,
+                    transformers ==0.4.*,
+                    unix ==2.7.*,
+                    vector ==0.10.*,
+                    zlib ==0.5.*
+  hs-source-dirs:   src
+
+Test-suite prediction-tests
+  Type:             exitcode-stdio-1.0
+  Main-is:          Main.hs
+  GHC-Options:      -Wall -fno-warn-orphans
+  Hs-source-dirs:   test, src
+  build-depends:
+                    app-settings ==0.2.* && >=0.2.0.5,
+                    array ==0.5.*,
+                    base >=4.8 && <5,
+                    bytestring ==0.10.*,
+                    cereal ==0.4.*,
+                    colour ==2.3.*,
+                    cond ==0.4.*,
+                    containers ==0.5.*,
+                    creatur ==5.9.5,
+                    creatur-wains ==7.3.4,
+                    directory ==1.2.*,
+                    filepath ==1.4.*,
+                    lens ==4.9.*,
+                    MonadRandom ==0.3.*,
+                    mtl ==2.2.*,
+                    random ==1.1.*,
+                    som ==8.0.*,
+                    split ==0.2.*,
+                    test-framework ==0.8.*,
+                    test-framework-hunit ==0.3.*,
+                    test-framework-quickcheck2 ==0.3.*,
+                    transformers ==0.4.*,
+                    vector ==0.10.*,
+                    QuickCheck ==2.7.* || ==2.8.*
+  Other-modules:    ALife.Creatur.Wain.Prediction.TestUtils
