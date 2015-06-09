@@ -10,7 +10,7 @@
 -- A message queue for data mining.
 --
 ------------------------------------------------------------------------
-{-# OPTIONS -XOverloadedStrings #-}
+{-# Language OverloadedStrings #-}
 
 import qualified Network.AMQP as Q
 import qualified Data.ByteString.Lazy.Char8 as BL

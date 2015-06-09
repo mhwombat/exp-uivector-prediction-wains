@@ -28,7 +28,7 @@ module ALife.Creatur.Wain.Prediction.Wain
     idealPopControlDeltaE -- exported for testing only
   ) where
 
-import ALife.Creatur (agentId, isAlive)
+import ALife.Creatur (AgentId, agentId, isAlive)
 import ALife.Creatur.Task (checkPopSize)
 import ALife.Creatur.Wain (Wain, Label, buildWainAndGenerateGenome,
   name, chooseAction, incAge, applyMetabolismCost,
@@ -44,7 +44,8 @@ import ALife.Creatur.Wain.Pretty (pretty)
 import ALife.Creatur.Wain.Raw (raw)
 import ALife.Creatur.Wain.Response (Response, randomResponse, action,
   outcome)
-import ALife.Creatur.Wain.UnitInterval (UIDouble, doubleToUI)
+import ALife.Creatur.Wain.UnitInterval (UIDouble, doubleToUI,
+  uiToDouble)
 import ALife.Creatur.Wain.Util (unitInterval)
 import qualified ALife.Creatur.Wain.Statistics as Stats
 import ALife.Creatur.Wain.Prediction.Action (Action(..), predict)
@@ -61,8 +62,8 @@ import Control.Lens hiding (universe)
 import Control.Monad (replicateM, when, unless)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Random (Rand, RandomGen, getRandomR, getRandomRs,
-  getRandom, evalRandIO)
-import Control.Monad.State.Lazy (StateT, execStateT)
+  getRandom, getRandoms, evalRandIO)
+import Control.Monad.State.Lazy (StateT, execStateT, get, put)
 import Data.List (intercalate, sortBy)
 import Data.Ord (comparing)
 import Data.Maybe (fromJust)
@@ -80,7 +81,7 @@ randomPredictorWain
 randomPredictorWain wainName u classifierSize deciderSize = do
   let k = view U.uVectorLength u
   classifierModels <- replicateM (fromIntegral classifierSize)
-    (fmap (take k) $ getRandomRs (0,1))
+    (fmap (take k) getRandoms)
   let fcp = RandomExponentialParams
                { _r0Range = view U.uClassifierR0Range u,
                  _dRange = view U.uClassifierDRange u }
@@ -199,7 +200,6 @@ makeLenses ''Experiment
 
 startRound :: StateT (U.Universe PredictorWain) IO ()
 startRound = do
-  U.writeToLog "DEBUG A"
   xs <- nextVector
   zoom U.uCurrVector $ putPS xs
   calculateRewards
@@ -209,7 +209,6 @@ finishRound :: StateT (U.Universe PredictorWain) IO ()
 finishRound = do
   v <- use U.uCurrVector
   assign U.uPrevVector v
-  zoom U.uRewards $ putPS []
   f <- use U.uStatsFile
   xss <- readStats f
   let yss = summarise xss
@@ -221,25 +220,26 @@ finishRound = do
   clearStats f
   (a, b) <- use U.uPopulationAllowedRange
   checkPopSize (a, b)
-  U.writeToLog "DEBUG Z"
 
-run :: U.Universe PredictorWain -> [PredictorWain]
+run :: [PredictorWain]
       -> StateT (U.Universe PredictorWain) IO [PredictorWain]
-run u (me:other:xs) = do
+run (me:other:xs) = do
   when (null xs) $ U.writeToLog "WARNING: Last two wains  standing!"
   p <- U.popSize
+  u <- get
   let e = Experiment { _subject = me,
                        _partner = other,
                        _weanlings = [],
                        _universe = u,
                        _summary = initSummary p}
   e' <- liftIO $ execStateT run' e
+  put (view universe e')
   let modifiedAgents
         = view subject e' : view partner e' : view weanlings e'
   U.writeToLog $
     "Modified agents: " ++ show (map agentId modifiedAgents)
   return modifiedAgents
-run _ _ = error "no more wains"
+run _ = error "no more wains"
 
 run' :: StateT Experiment IO ()
 run' = do
@@ -336,23 +336,45 @@ calculateRewards :: StateT (U.Universe PredictorWain) IO ()
 calculateRewards = do
   (x:_) <- zoom U.uCurrVector getPS
   ps <- zoom U.uPredictions getPS
-  U.writeToLog $ "Predictions " ++ show ps
-  let errs
-        = sortBy (comparing snd) $
-            map (\(a, (r, y)) -> (a, (r, abs(x - y)))) ps
-  U.writeToLog $ "Errors " ++ show errs
+  U.writeToLog $ "Predictions " ++ show (map dropMiddleOf3 ps)
+  let errs = sortBy (comparing fourthOf4) $ map (calculateError x) ps
+  U.writeToLog $ "Errors " ++ show (map dropMiddleOf4 errs)
   n <- use U.uNumPredictionsToReward
   deltaE <- use U.uTopPredictionsDeltaE
   let (as, bs) = splitAt n errs
-  let as' = map (\(a, (r, _)) -> (a, (r, deltaE))) as -- reward
-  let bs' = map (\(b, (r, _)) -> (b, (r, 0))) bs      -- no reward
-  zoom U.uRewards $ putPS (as' ++ bs')
-  
+  let as' = map (\(a, r, p, _) -> (a, r, p, deltaE)) as -- reward
+  let bs' = map (\(a, r, p, _) -> (a, r, p, 0)) bs      -- no reward
+  let ps' = as' ++ bs'
+  zoom U.uRewards (putPS ps')
+  mapM_ (U.writeToLog . describeReward x) ps'
+  U.writeToLog $ "Rewards " ++ show (map dropMiddleOf4 ps')
+
+dropMiddleOf3 :: (a, b, c) -> (a, c)
+dropMiddleOf3 (a, _, c) = (a, c)
+
+dropMiddleOf4 :: (a, b, c, d) -> (a, d)
+dropMiddleOf4 (a, _, _, d) = (a, d)
+
+fourthOf4 :: (a, b, c, d) -> d
+fourthOf4 (_, _, _, d) = d
+
+describeReward
+  :: UIDouble -> (AgentId, Response Action, UIDouble, Double) -> String
+describeReward actual (a, _, predicted, deltaE)
+  = a ++ " predicted " ++ show predicted ++ ", actual value was "
+      ++ show actual ++ ", reward is " ++ show deltaE
+
+calculateError
+  :: UIDouble -> (AgentId, Response Action, UIDouble)
+    -> (AgentId, Response Action, UIDouble, Double)
+calculateError x (a, r, p)
+  = (a, r, p, abs(uiToDouble x - uiToDouble p))
+
 rewardPrediction :: StateT Experiment IO ()
 rewardPrediction = do
   a <- use subject
   rs <- zoom (universe . U.uRewards) getPS
-  case (lookup (agentId a) rs) of
+  case lookup4 (agentId a) rs of
     Nothing ->
       zoom universe . U.writeToLog $ "First turn for " ++ agentId a
     Just (r, deltaE) -> do
@@ -360,6 +382,11 @@ rewardPrediction = do
         "Reward for " ++ agentId a ++ " is " ++ show deltaE
       adjustWainEnergy subject deltaE rPredDeltaE rChildPredDeltaE
       letSubjectReflect r
+
+lookup4 :: Eq a => a -> [(a, b, c, d)] -> Maybe (b, d)
+lookup4 k ((a, b, _, d):xs) | a == k    = Just (b, d)
+                            | otherwise = lookup4 k xs
+lookup4 _ [] = Nothing
 
 makePrediction :: StateT Experiment IO ()
 makePrediction = do
@@ -375,7 +402,7 @@ makePrediction = do
   let xPredicted = predict (view action r) x
   zoom universe . U.writeToLog $
     agentId a ++ " predicts " ++ show xPredicted
-  let ps' = (agentId a, (r, xPredicted)) : ps
+  let ps' = (agentId a, r, xPredicted) : ps
   zoom (universe . U.uPredictions) $ putPS ps'
 
 chooseAction3

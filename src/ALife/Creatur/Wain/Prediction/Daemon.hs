@@ -17,12 +17,15 @@ module Main where
 import ALife.Creatur (programVersion)
 import ALife.Creatur.Daemon (CreaturDaemon(..), Job(..),
   simpleDaemon, launch)
+-- import ALife.Creatur.Daemon (Job(..), launchInteractive)
 import ALife.Creatur.Task (runInteractingAgents, simpleJob)
 import ALife.Creatur.Wain (programVersion)
 import ALife.Creatur.Wain.Prediction.Wain (PredictorWain, run, 
   startRound, finishRound)
 import ALife.Creatur.Wain.Prediction.Universe (Universe(..),
   writeToLog, loadUniverse, uSleepBetweenTasks, uExperimentName)
+-- import ALife.Creatur.Wain.Prediction.Universe (Universe(..),
+--   writeToLog, loadUniverse, uSleepBetweenTasks)
 import Control.Concurrent (MVar, newMVar, readMVar, swapMVar)
 import Control.Lens
 import Control.Monad (unless)
@@ -53,7 +56,7 @@ shutdownHandler programName u = do
 main :: IO ()
 main = do
   u <- loadUniverse
-  let program = run u
+  let program = run
   let message = "prediction-wains-" ++ showVersion version
           ++ ", compiled with " ++ ALife.Creatur.Wain.programVersion
           ++ ", " ++ ALife.Creatur.programVersion
@@ -63,8 +66,7 @@ main = do
           onStartup=startupHandler message,
           onShutdown=shutdownHandler message,
           sleepTime=view uSleepBetweenTasks u }
+  -- launchInteractive j u
   let d = (simpleDaemon j u) { name=Just . view uExperimentName $ u }
   let cd = CreaturDaemon d j
-  putStrLn "DEBUG wombat"
   launch cd
-  putStrLn "DEBUG numbat"
