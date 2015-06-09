@@ -24,7 +24,7 @@ source-repository this
 
 executable prediction-daemon
   main-is:          ALife/Creatur/Wain/Prediction/Daemon.hs
-  ghc-options:      -Wall -Werror -O2 -rtsopts
+  ghc-options:      -Wall -Werror -O2 -rtsopts -threaded
   build-depends:    app-settings ==0.2.* && >=0.2.0.5,
                     array ==0.5.*,
                     base >=4.8 && <5,
@@ -55,7 +55,7 @@ executable prediction-daemon
 
 executable prediction-init
   main-is:          ALife/Creatur/Wain/Prediction/GeneratePopulation.hs
-  ghc-options:      -Wall -Werror -O2 -rtsopts
+  ghc-options:      -Wall -Werror -O2 -rtsopts -threaded
   build-depends:
                     app-settings ==0.2.* && >=0.2.0.5,
                     array ==0.5.*,
