@@ -28,7 +28,7 @@ module ALife.Creatur.Wain.Prediction.Wain
     idealPopControlDeltaE -- exported for testing only
   ) where
 
-import ALife.Creatur (AgentId, agentId, isAlive)
+import ALife.Creatur (agentId, isAlive)
 import ALife.Creatur.Task (checkPopSize)
 import ALife.Creatur.Wain (Wain, Label, buildWainAndGenerateGenome,
   name, chooseAction, incAge, applyMetabolismCost,
@@ -46,7 +46,7 @@ import ALife.Creatur.Wain.Response (Response, randomResponse, action,
   outcome)
 import ALife.Creatur.Wain.UnitInterval (UIDouble, doubleToUI,
   uiToDouble)
-import ALife.Creatur.Wain.Util (unitInterval)
+import ALife.Creatur.Wain.Util (unitInterval, inRange, enforceRange)
 import qualified ALife.Creatur.Wain.Statistics as Stats
 import ALife.Creatur.Wain.Prediction.Action (Action(..), predict)
 import ALife.Creatur.Wain.Prediction.DataGen (nextVector)
@@ -64,8 +64,7 @@ import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Random (Rand, RandomGen, getRandomR, getRandomRs,
   getRandom, getRandoms, evalRandIO)
 import Control.Monad.State.Lazy (StateT, execStateT, get, put)
-import Data.List (intercalate, sortBy)
-import Data.Ord (comparing)
+import Data.List (intercalate)
 import Data.Maybe (fromJust)
 import Data.Word (Word16)
 import System.Directory (createDirectoryIfMissing)
@@ -202,8 +201,13 @@ startRound :: StateT (U.Universe PredictorWain) IO ()
 startRound = do
   xs <- nextVector
   zoom U.uCurrVector $ putPS xs
-  calculateRewards
-  zoom U.uPredictions $ putPS []
+  let actual = head xs
+  margin <- use U.uAccuracyMargin
+  let a = doubleToUI . enforceRange unitInterval $
+            (uiToDouble actual - uiToDouble margin)
+  let b = doubleToUI . enforceRange unitInterval $
+            (uiToDouble actual + uiToDouble margin)
+  zoom U.uCurrentAccuracyRange $ putPS (a,b)
 
 finishRound :: StateT (U.Universe PredictorWain) IO ()
 finishRound = do
@@ -332,61 +336,75 @@ runMetabolism = do
   (summary . rChildMetabolismDeltaE) += childCost
   assign subject a'
 
-calculateRewards :: StateT (U.Universe PredictorWain) IO ()
-calculateRewards = do
-  (x:_) <- zoom U.uCurrVector getPS
-  ps <- zoom U.uPredictions getPS
-  U.writeToLog $ "Predictions " ++ show (map dropMiddleOf3 ps)
-  let errs = sortBy (comparing fourthOf4) $ map (calculateError x) ps
-  U.writeToLog $ "Errors " ++ show (map dropMiddleOf4 errs)
-  n <- use U.uNumPredictionsToReward
-  deltaE <- use U.uTopPredictionsDeltaE
-  let (as, bs) = splitAt n errs
-  let as' = map (\(a, r, p, _) -> (a, r, p, deltaE)) as -- reward
-  let bs' = map (\(a, r, p, _) -> (a, r, p, 0)) bs      -- no reward
-  let ps' = as' ++ bs'
-  zoom U.uRewards (putPS ps')
-  mapM_ (U.writeToLog . describeReward x) ps'
-  U.writeToLog $ "Rewards " ++ show (map dropMiddleOf4 ps')
-
-dropMiddleOf3 :: (a, b, c) -> (a, c)
-dropMiddleOf3 (a, _, c) = (a, c)
-
-dropMiddleOf4 :: (a, b, c, d) -> (a, d)
-dropMiddleOf4 (a, _, _, d) = (a, d)
-
-fourthOf4 :: (a, b, c, d) -> d
-fourthOf4 (_, _, _, d) = d
-
-describeReward
-  :: UIDouble -> (AgentId, Response Action, UIDouble, Double) -> String
-describeReward actual (a, _, predicted, deltaE)
-  = a ++ " predicted " ++ show predicted ++ ", actual value was "
-      ++ show actual ++ ", reward is " ++ show deltaE
-
-calculateError
-  :: UIDouble -> (AgentId, Response Action, UIDouble)
-    -> (AgentId, Response Action, UIDouble, Double)
-calculateError x (a, r, p)
-  = (a, r, p, abs(uiToDouble x - uiToDouble p))
-
 rewardPrediction :: StateT Experiment IO ()
 rewardPrediction = do
   a <- use subject
-  rs <- zoom (universe . U.uRewards) getPS
-  case lookup4 (agentId a) rs of
+  ps <- zoom (universe . U.uPredictions) getPS
+  case lookup3 (agentId a) ps of
     Nothing ->
       zoom universe . U.writeToLog $ "First turn for " ++ agentId a
-    Just (r, deltaE) -> do
+    Just (r, predicted) -> do
+      range <- zoom (universe . U.uCurrentAccuracyRange) getPS
+      accuracyDeltaE <- use (universe . U.uAccuracyDeltaE)
+      let deltaE = if inRange range predicted then accuracyDeltaE else 0
+      actual <- head <$> zoom (universe . U.uCurrVector) getPS
       zoom universe . U.writeToLog $
-        "Reward for " ++ agentId a ++ " is " ++ show deltaE
+        agentId a ++ " predicted " ++ show predicted ++ ", actual value was "
+        ++ show actual ++ ", reward is " ++ show deltaE
       adjustWainEnergy subject deltaE rPredDeltaE rChildPredDeltaE
       letSubjectReflect r
+      zoom (universe . U.uPredictions) . putPS . remove3 (agentId a) $ ps
 
-lookup4 :: Eq a => a -> [(a, b, c, d)] -> Maybe (b, d)
-lookup4 k ((a, b, _, d):xs) | a == k    = Just (b, d)
-                            | otherwise = lookup4 k xs
-lookup4 _ [] = Nothing
+-- calculateRewards :: StateT (U.Universe PredictorWain) IO ()
+-- calculateRewards = do
+--   (x:_) <- zoom U.uCurrVector getPS
+--   ps <- zoom U.uPredictions getPS
+--   U.writeToLog $ "Predictions " ++ show (map dropMiddleOf3 ps)
+--   deltaE <- use U.uAccuracyDeltaE
+--   let rs = map (calculateReward range deltaE) ps
+--   U.writeToLog $ "Rewards " ++ show (map dropMiddleOf4 rs)
+--   zoom U.uRewards (putPS rs)
+--   mapM_ (U.writeToLog . describeReward x) rs
+
+-- calculateReward
+--   :: (UIDouble, UIDouble) -> Double
+--     -> (AgentId, Response Action, UIDouble)
+--       -> (AgentId, Response Action, UIDouble, Double)
+-- calculateReward (a, b) deltaE (w, r, pred) =
+--   if a <= pred && pred <= b
+--     then (w, r, pred, deltaE)
+--     else (w, r, pred, 0)
+
+-- dropMiddleOf3 :: (a, b, c) -> (a, c)
+-- dropMiddleOf3 (a, _, c) = (a, c)
+
+-- dropMiddleOf4 :: (a, b, c, d) -> (a, d)
+-- dropMiddleOf4 (a, _, _, d) = (a, d)
+
+-- fourthOf4 :: (a, b, c, d) -> d
+-- fourthOf4 (_, _, _, d) = d
+
+-- describeReward
+--   :: UIDouble -> (AgentId, Response Action, UIDouble, Double) -> String
+-- describeReward actual (a, _, predicted, deltaE)
+--   = a ++ " predicted " ++ show predicted ++ ", actual value was "
+--       ++ show actual ++ ", reward is " ++ show deltaE
+
+-- calculateError
+--   :: UIDouble -> (AgentId, Response Action, UIDouble)
+--     -> (AgentId, Response Action, UIDouble, Double)
+-- calculateError x (a, r, p)
+--   = (a, r, p, abs(uiToDouble x - uiToDouble p))
+
+lookup3 :: Eq a => a -> [(a, b, c)] -> Maybe (b, c)
+lookup3 k ((a, b, c):xs) | a == k    = Just (b, c)
+                         | otherwise = lookup3 k xs
+lookup3 _ [] = Nothing
+
+remove3 :: Eq a => a -> [(a, b, c)] -> [(a, b, c)]
+remove3 k ((a, b, c):xs) | a == k    = xs
+                         | otherwise = (a, b, c):remove3 k xs
+remove3 _ [] = []
 
 makePrediction :: StateT Experiment IO ()
 makePrediction = do

@@ -44,7 +44,8 @@ module ALife.Creatur.Wain.Prediction.Universe
     uIdealPopulationSize,
     uPopulationAllowedRange,
     uNumPredictionsToReward,
-    uTopPredictionsDeltaE,
+    uAccuracyMargin,
+    uAccuracyDeltaE,
     uBaseMetabolismDeltaE,
     uEnergyCostPerByte,
     uChildCostFactor,
@@ -57,8 +58,8 @@ module ALife.Creatur.Wain.Prediction.Universe
     uCheckpoints,
     uCurrVector,
     uPrevVector,
+    uCurrentAccuracyRange,
     uPredictions,
-    uRewards,
     -- * Other
     U.agentIds,
     U.currentTime,
@@ -82,7 +83,7 @@ import qualified ALife.Creatur.Universe as U
 import qualified ALife.Creatur.Wain.Checkpoint as CP
 import ALife.Creatur.Wain.Prediction.Action (Action)
 import ALife.Creatur.Wain.Response (Response)
-import ALife.Creatur.Wain.UnitInterval (UIDouble)
+import ALife.Creatur.Wain.UnitInterval (UIDouble, doubleToUI)
 import Control.Exception (SomeException, try)
 import Control.Lens hiding (Setting)
 import Data.AppSettings (Setting(..), GetSetting(..),
@@ -113,7 +114,8 @@ data Universe a = Universe
     _uIdealPopulationSize :: Int,
     _uPopulationAllowedRange :: (Int, Int),
     _uNumPredictionsToReward :: Int,
-    _uTopPredictionsDeltaE :: Double,
+    _uAccuracyMargin :: UIDouble,
+    _uAccuracyDeltaE :: Double,
     _uBaseMetabolismDeltaE :: Double,
     _uEnergyCostPerByte :: Double,
     _uChildCostFactor :: Double,
@@ -126,8 +128,8 @@ data Universe a = Universe
     _uCheckpoints :: [CP.Checkpoint],
     _uCurrVector :: Persistent [UIDouble],
     _uPrevVector :: Persistent [UIDouble],
-    _uPredictions :: Persistent [(AgentId, Response Action, UIDouble)],
-    _uRewards :: Persistent [(AgentId, Response Action, UIDouble, Double)]
+    _uCurrentAccuracyRange :: Persistent (UIDouble, UIDouble),
+    _uPredictions :: Persistent [(AgentId, Response Action, UIDouble)]
   } deriving Show
 makeLenses ''Universe
 
@@ -204,8 +206,11 @@ cPopulationAllowedRange = requiredSetting "popAllowedRange"
 cFractionPredictionsToReward :: Setting Double
 cFractionPredictionsToReward = requiredSetting "fractionPredictionsToReward"
 
-cTopPredictionsDeltaE :: Setting Double
-cTopPredictionsDeltaE = requiredSetting "topPredictionsDeltaE"
+cAccuracyMargin :: Setting Double
+cAccuracyMargin = requiredSetting "accuracyMargin"
+
+cAccuracyDeltaE :: Setting Double
+cAccuracyDeltaE = requiredSetting "accuracyDeltaE"
 
 cBaseMetabolismDeltaE :: Setting Double
 cBaseMetabolismDeltaE = requiredSetting "baseMetabDeltaE"
@@ -272,7 +277,8 @@ config2Universe getSetting =
       _uPopulationAllowedRange = (a', b'),
       _uNumPredictionsToReward
         = round (fromIntegral pIdeal * fractionPredictionsToReward),
-      _uTopPredictionsDeltaE = getSetting cTopPredictionsDeltaE,
+      _uAccuracyMargin = doubleToUI $ getSetting cAccuracyMargin,
+      _uAccuracyDeltaE = getSetting cAccuracyDeltaE,
       _uBaseMetabolismDeltaE = getSetting cBaseMetabolismDeltaE,
       _uEnergyCostPerByte = getSetting cEnergyCostPerByte,
       _uChildCostFactor = getSetting cChildCostFactor,
@@ -286,8 +292,10 @@ config2Universe getSetting =
       _uCheckpoints = getSetting cCheckpoints,
       _uCurrVector = mkPersistent [] (workDir ++ "/currVector"),
       _uPrevVector = mkPersistent [] (workDir ++ "/prevVector"),
-      _uPredictions = mkPersistent [] (workDir ++ "/predictions"),
-      _uRewards = mkPersistent [] (workDir ++ "/rewards")
+      _uCurrentAccuracyRange
+        = mkPersistent (doubleToUI 0, doubleToUI 0)
+            (workDir ++ "/accuracy"),
+      _uPredictions = mkPersistent [] (workDir ++ "/predictions")
     }
   where en = getSetting cExperimentName
         workDir = getSetting cWorkingDir
