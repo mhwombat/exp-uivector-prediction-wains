@@ -43,7 +43,6 @@ module ALife.Creatur.Wain.Prediction.Universe
     uInitialPopulationSize,
     uIdealPopulationSize,
     uPopulationAllowedRange,
-    uNumPredictionsToReward,
     uAccuracyMargin,
     uAccuracyDeltaE,
     uBaseMetabolismDeltaE,
@@ -113,7 +112,6 @@ data Universe a = Universe
     _uInitialPopulationSize :: Int,
     _uIdealPopulationSize :: Int,
     _uPopulationAllowedRange :: (Int, Int),
-    _uNumPredictionsToReward :: Int,
     _uAccuracyMargin :: UIDouble,
     _uAccuracyDeltaE :: Double,
     _uBaseMetabolismDeltaE :: Double,
@@ -203,9 +201,6 @@ cIdealPopulationSize = requiredSetting "idealPopSize"
 cPopulationAllowedRange :: Setting (Double, Double)
 cPopulationAllowedRange = requiredSetting "popAllowedRange"
 
-cFractionPredictionsToReward :: Setting Double
-cFractionPredictionsToReward = requiredSetting "fractionPredictionsToReward"
-
 cAccuracyMargin :: Setting Double
 cAccuracyMargin = requiredSetting "accuracyMargin"
 
@@ -275,8 +270,6 @@ config2Universe getSetting =
       _uInitialPopulationSize = p0,
       _uIdealPopulationSize = pIdeal,
       _uPopulationAllowedRange = (a', b'),
-      _uNumPredictionsToReward
-        = round (fromIntegral pIdeal * fractionPredictionsToReward),
       _uAccuracyMargin = doubleToUI $ getSetting cAccuracyMargin,
       _uAccuracyDeltaE = getSetting cAccuracyDeltaE,
       _uBaseMetabolismDeltaE = getSetting cBaseMetabolismDeltaE,
@@ -305,5 +298,3 @@ config2Universe getSetting =
         (a, b) = getSetting cPopulationAllowedRange
         a' = round (fromIntegral pIdeal * a)
         b' = round (fromIntegral pIdeal * b)
-        fractionPredictionsToReward
-          = getSetting cFractionPredictionsToReward
