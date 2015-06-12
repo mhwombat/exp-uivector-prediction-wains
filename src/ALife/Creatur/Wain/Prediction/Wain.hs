@@ -31,7 +31,7 @@ module ALife.Creatur.Wain.Prediction.Wain
 import ALife.Creatur (agentId, isAlive)
 import ALife.Creatur.Task (checkPopSize)
 import ALife.Creatur.Wain (Wain, Label, buildWainAndGenerateGenome,
-  name, chooseAction, incAge, applyMetabolismCost,
+  name, chooseAction, incAge, applyMetabolismCost, condition,
   weanMatureChildren, pruneDeadChildren, adjustEnergy, adjustPassion,
   reflect, mate, litter, brain, energy, childEnergy, age, wainSize)
 import ALife.Creatur.Wain.Brain (decider, Brain(..))
@@ -43,7 +43,7 @@ import ALife.Creatur.Wain.GeneticSOM (RandomExponentialParams(..),
 import ALife.Creatur.Wain.Pretty (pretty)
 import ALife.Creatur.Wain.Raw (raw)
 import ALife.Creatur.Wain.Response (Response, randomResponse, action,
-  outcome)
+  outcome, scenario)
 import ALife.Creatur.Wain.UnitInterval (UIDouble, doubleToUI,
   uiToDouble)
 import ALife.Creatur.Wain.Util (unitInterval, inRange, enforceRange)
@@ -55,6 +55,7 @@ import qualified ALife.Creatur.Wain.Prediction.Universe as U
 import ALife.Creatur.Persistent (getPS, putPS)
 import ALife.Creatur.Wain.PersistentStatistics (updateStats, readStats,
   clearStats)
+import qualified ALife.Creatur.Wain.Scenario as Sc
 import ALife.Creatur.Wain.Statistics (summarise)
 import ALife.Creatur.Wain.Weights (makeWeights)
 import Control.Conditional (whenM)
@@ -353,20 +354,22 @@ rewardPrediction = do
     Just (r, predicted) -> do
       zoom universe . U.writeToLog $ "DEBUG 10 " ++ agentId a
         ++ "'s energy" ++ show (view energy a)
+      let r' = set (scenario . Sc.condition) (condition a) r
       range <- zoom (universe . U.uCurrentAccuracyRange) getPS
       accuracyDeltaE <- use (universe . U.uAccuracyDeltaE)
       let deltaE = if inRange range predicted then accuracyDeltaE else 0
       actual <- head <$> zoom (universe . U.uCurrVector) getPS
       zoom universe . U.writeToLog $
-        agentId a ++ " predicted " ++ show predicted ++ ", actual value was "
-        ++ show actual ++ ", reward is " ++ show deltaE
+        agentId a ++ " predicted " ++ show predicted
+        ++ ", actual value was " ++ show actual
+        ++ ", reward is " ++ show deltaE
       adjustWainEnergy subject deltaE rPredDeltaE rChildPredDeltaE
-      zoom universe . U.writeToLog $
-        "DEBUG r=" ++ show r
+      zoom universe . U.writeToLog $ "DEBUG r=" ++ show r
+      zoom universe . U.writeToLog $ "DEBUG r'=" ++ show r'
       wombat <- use subject
       zoom universe . U.writeToLog $ "DEBUG 11 " ++ agentId a
         ++ "'s energy" ++ show (view energy wombat)
-      letSubjectReflect r
+      letSubjectReflect r'
       zoom (universe . U.uPredictions) . putPS . remove3 (agentId a) $ ps
 
 -- calculateRewards :: StateT (U.Universe PredictorWain) IO ()
