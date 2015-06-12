@@ -255,11 +255,16 @@ run' = do
     ++ "'s summary: " ++ pretty (Stats.stats a)
   rewardPrediction
   runMetabolism
+  killIfTooOld
   applyPopControl
   adjustSubjectPassion
   subject %= incAge
   maybeFlirt
+  zoom universe . U.writeToLog $ "DEBUG 1 " ++ agentId a
+    ++ "'s energy" ++ show (view energy a)
   makePrediction
+  zoom universe . U.writeToLog $ "DEBUG 2 " ++ agentId a
+    ++ "'s energy" ++ show (view energy a)
   a' <- use subject
   zoom universe . U.writeToLog $ "End of " ++ agentId a ++ "'s turn"
   -- assign (summary.rNetDeltaE) (energy a' - energy a)
@@ -268,7 +273,6 @@ run' = do
   (ef, ecf) <- totalEnergy
   balanceEnergyEquation e0 ec0 ef ecf
   updateChildren
-  killIfTooOld
   agentStats <- ((Stats.stats a' ++) . summaryStats) <$> use summary
   zoom universe . U.writeToLog $ "At end of turn, " ++ agentId a
     ++ "'s summary: " ++ pretty agentStats
@@ -277,6 +281,9 @@ run' = do
   -- whenM (use (universe . U.uGenFmris)) writeFmri
   sf <- use (universe . U.uStatsFile)
   zoom universe $ updateStats agentStats sf
+  wombat <- use subject
+  zoom universe . U.writeToLog $ "DEBUG 3 " ++ agentId a
+    ++ "'s energy" ++ show (view energy wombat)
 
 fillInSummary :: Summary -> Summary
 fillInSummary s = s
@@ -344,6 +351,8 @@ rewardPrediction = do
     Nothing ->
       zoom universe . U.writeToLog $ "First turn for " ++ agentId a
     Just (r, predicted) -> do
+      zoom universe . U.writeToLog $ "DEBUG 10 " ++ agentId a
+        ++ "'s energy" ++ show (view energy a)
       range <- zoom (universe . U.uCurrentAccuracyRange) getPS
       accuracyDeltaE <- use (universe . U.uAccuracyDeltaE)
       let deltaE = if inRange range predicted then accuracyDeltaE else 0
@@ -352,6 +361,11 @@ rewardPrediction = do
         agentId a ++ " predicted " ++ show predicted ++ ", actual value was "
         ++ show actual ++ ", reward is " ++ show deltaE
       adjustWainEnergy subject deltaE rPredDeltaE rChildPredDeltaE
+      zoom universe . U.writeToLog $
+        "DEBUG r=" ++ show r
+      wombat <- use subject
+      zoom universe . U.writeToLog $ "DEBUG 11 " ++ agentId a
+        ++ "'s energy" ++ show (view energy wombat)
       letSubjectReflect r
       zoom (universe . U.uPredictions) . putPS . remove3 (agentId a) $ ps
 
@@ -586,6 +600,8 @@ letSubjectReflect
 letSubjectReflect r = do
   x <- use subject
   p <- zoom (universe . U.uPrevVector) getPS
+  zoom universe . U.writeToLog $ "DEBUG 20 " ++ agentId x
+    ++ "'s energy" ++ show (view energy x)
   let (x', err) = reflect [p] r x
   assign subject x'
   assign (summary . rErr) err
