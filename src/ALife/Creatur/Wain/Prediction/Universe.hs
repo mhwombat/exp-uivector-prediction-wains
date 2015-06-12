@@ -50,6 +50,7 @@ module ALife.Creatur.Wain.Prediction.Universe
     uChildCostFactor,
     uFlirtingFrequency,
     uPopControlDeltaE,
+    uOutcomeRange,
     uClassifierR0Range,
     uClassifierDRange,
     uDeciderR0Range,
@@ -119,10 +120,11 @@ data Universe a = Universe
     _uChildCostFactor :: Double,
     _uFlirtingFrequency :: Double,
     _uPopControlDeltaE :: Persistent Double,
-    _uClassifierR0Range :: (Double,Double),
-    _uClassifierDRange :: (Double,Double),
-    _uDeciderR0Range :: (Double,Double),
-    _uDeciderDRange :: (Double,Double),
+    _uOutcomeRange :: (Double, Double),
+    _uClassifierR0Range :: (Double, Double),
+    _uClassifierDRange :: (Double, Double),
+    _uDeciderR0Range :: (Double, Double),
+    _uDeciderDRange :: (Double, Double),
     _uCheckpoints :: [CP.Checkpoint],
     _uCurrVector :: Persistent [UIDouble],
     _uPrevVector :: Persistent [UIDouble],
@@ -219,6 +221,9 @@ cChildCostFactor = requiredSetting "childCostFactor"
 cFlirtingFrequency :: Setting Double
 cFlirtingFrequency = requiredSetting "flirtingFrequency"
 
+cOutcomeRange :: Setting (Double,Double)
+cOutcomeRange = requiredSetting "outcomeRange"
+
 cClassifierR0Range :: Setting (Double,Double)
 cClassifierR0Range = requiredSetting "classifierR0Range"
 
@@ -278,6 +283,7 @@ config2Universe getSetting =
       _uFlirtingFrequency = getSetting cFlirtingFrequency,
       _uPopControlDeltaE
         = mkPersistent 0 (workDir ++ "/popControlDeltaE"),
+      _uOutcomeRange = getSetting cOutcomeRange,
       _uClassifierR0Range = getSetting cClassifierR0Range,
       _uClassifierDRange = getSetting cClassifierDRange,
       _uDeciderR0Range = getSetting cDeciderR0Range,

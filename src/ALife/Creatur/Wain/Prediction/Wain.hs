@@ -93,7 +93,7 @@ randomPredictorWain wainName u classifierSize deciderSize = do
                 _dRange = view U.uDeciderDRange u }
   fd <- randomExponential fdp
   xs <- replicateM (fromIntegral deciderSize) $
-          randomResponse 1 (numModels c)
+          randomResponse 1 (numModels c) (view U.uOutcomeRange u)
   cw <- (makeWeights . take 3) <$> getRandomRs unitInterval
   sw <- (makeWeights . take 3) <$> getRandomRs unitInterval
   rw <- (makeWeights . take 2) <$> getRandomRs unitInterval
