@@ -261,11 +261,7 @@ run' = do
   adjustSubjectPassion
   subject %= incAge
   maybeFlirt
-  zoom universe . U.writeToLog $ "DEBUG 1 " ++ agentId a
-    ++ "'s energy" ++ show (view energy a)
   makePrediction
-  zoom universe . U.writeToLog $ "DEBUG 2 " ++ agentId a
-    ++ "'s energy" ++ show (view energy a)
   a' <- use subject
   zoom universe . U.writeToLog $ "End of " ++ agentId a ++ "'s turn"
   -- assign (summary.rNetDeltaE) (energy a' - energy a)
@@ -282,9 +278,6 @@ run' = do
   -- whenM (use (universe . U.uGenFmris)) writeFmri
   sf <- use (universe . U.uStatsFile)
   zoom universe $ updateStats agentStats sf
-  wombat <- use subject
-  zoom universe . U.writeToLog $ "DEBUG 3 " ++ agentId a
-    ++ "'s energy" ++ show (view energy wombat)
 
 fillInSummary :: Summary -> Summary
 fillInSummary s = s
@@ -352,8 +345,9 @@ rewardPrediction = do
     Nothing ->
       zoom universe . U.writeToLog $ "First turn for " ++ agentId a
     Just (r, predicted) -> do
-      zoom universe . U.writeToLog $ "DEBUG 10 " ++ agentId a
-        ++ "'s energy" ++ show (view energy a)
+      -- The wain's condition may have changed between the time it
+      -- made the decision and the time it gets the reward (e.g., as
+      -- a result of mating).
       let r' = set (scenario . Sc.condition) (condition a) r
       range <- zoom (universe . U.uCurrentAccuracyRange) getPS
       accuracyDeltaE <- use (universe . U.uAccuracyDeltaE)
@@ -364,11 +358,6 @@ rewardPrediction = do
         ++ ", actual value was " ++ show actual
         ++ ", reward is " ++ show deltaE
       adjustWainEnergy subject deltaE rPredDeltaE rChildPredDeltaE
-      zoom universe . U.writeToLog $ "DEBUG r=" ++ show r
-      zoom universe . U.writeToLog $ "DEBUG r'=" ++ show r'
-      wombat <- use subject
-      zoom universe . U.writeToLog $ "DEBUG 11 " ++ agentId a
-        ++ "'s energy" ++ show (view energy wombat)
       letSubjectReflect r'
       zoom (universe . U.uPredictions) . putPS . remove3 (agentId a) $ ps
 
@@ -603,8 +592,6 @@ letSubjectReflect
 letSubjectReflect r = do
   x <- use subject
   p <- zoom (universe . U.uPrevVector) getPS
-  zoom universe . U.writeToLog $ "DEBUG 20 " ++ agentId x
-    ++ "'s energy" ++ show (view energy x)
   let (x', err) = reflect [p] r x
   assign subject x'
   assign (summary . rErr) err
