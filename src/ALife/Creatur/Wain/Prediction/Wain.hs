@@ -124,7 +124,8 @@ data Summary = Summary
     _rPartnerMatingDeltaE :: Double,
     _rNetDeltaE :: Double,
     _rChildNetDeltaE :: Double,
-    _rErr :: Double,
+    _rValuePredictionErr :: Double,
+    _rRewardPredictionErr :: Double,
     _rBirthCount :: Int,
     _rWeanCount :: Int,
     _rFlirtCount :: Int,
@@ -152,7 +153,8 @@ initSummary p = Summary
     _rPartnerMatingDeltaE = 0,
     _rNetDeltaE = 0,
     _rChildNetDeltaE = 0,
-    _rErr = 0,
+    _rValuePredictionErr = 0,
+    _rRewardPredictionErr = 0,
     _rBirthCount = 0,
     _rWeanCount = 0,
     _rFlirtCount = 0,
@@ -180,7 +182,8 @@ summaryStats r =
     Stats.uiStat "other adult mating Δe" (view rPartnerMatingDeltaE r),
     Stats.uiStat "adult net Δe" (view rNetDeltaE r),
     Stats.uiStat "child net Δe" (view rChildNetDeltaE r),
-    Stats.uiStat "err" (view rErr r),
+    Stats.uiStat "value pred. err" (view rValuePredictionErr r),
+    Stats.uiStat "reward pred. err" (view rRewardPredictionErr r),
     Stats.iStat "bore" (view rBirthCount r),
     Stats.iStat "weaned" (view rWeanCount r),
     Stats.iStat "flirted" (view rFlirtCount r),
@@ -357,6 +360,8 @@ rewardPrediction = do
         agentId a ++ " predicted " ++ show predicted
         ++ ", actual value was " ++ show actual
         ++ ", reward is " ++ show deltaE
+      let err = abs $ uiToDouble actual - uiToDouble predicted
+      assign (summary . rValuePredictionErr) err
       adjustWainEnergy subject deltaE rPredDeltaE rChildPredDeltaE
       letSubjectReflect r'
       zoom (universe . U.uPredictions) . putPS . remove3 (agentId a) $ ps
@@ -594,7 +599,7 @@ letSubjectReflect r = do
   p <- zoom (universe . U.uPrevVector) getPS
   let (x', err) = reflect [p] r x
   assign subject x'
-  assign (summary . rErr) err
+  assign (summary . rRewardPredictionErr) err
 
 writeRawStats
   :: String -> FilePath -> [Stats.Statistic]
