@@ -206,6 +206,12 @@ startRound = do
   xs <- nextVector
   zoom U.uCurrVector $ putPS xs
   let actual = head xs
+  ps <- zoom U.uPredictions getPS
+  let predicted = mean . map uiToDouble $ thirdOfThree ps
+  let err = abs (uiToDouble actual - predicted)
+  U.writeToLog $ "actual=" ++ show actual
+    ++ " predicted=" ++ show predicted
+    ++ " err=" ++ show err
   margin <- use U.uAccuracyMargin
   let a = doubleToUI . enforceRange unitInterval $
             (uiToDouble actual - uiToDouble margin)
@@ -417,6 +423,10 @@ remove3 k ((a, b, c):xs) | a == k    = xs
                          | otherwise = (a, b, c):remove3 k xs
 remove3 _ [] = []
 
+thirdOfThree :: [(a, b, c)] -> [c]
+thirdOfThree ((_, _, c):xs) = c : thirdOfThree xs
+thirdOfThree [] = []
+
 makePrediction :: StateT Experiment IO ()
 makePrediction = do
   a <- use subject
@@ -440,13 +450,15 @@ chooseAction3
         (Double, Int, Response Action, PredictorWain)
 chooseAction3 w vs = do
   whenM (use U.uShowDeciderModels) $ describeModels w
-  let (r, w', xs, dObjNovelty:_) = chooseAction [vs] w
+  let (cl:_, sl, r, w', xs, dObjNovelty:_) = chooseAction [vs] w
   whenM (use U.uShowPredictions) $ describeOutcomes w xs
   let dObjNoveltyAdj = round $ dObjNovelty * fromIntegral (view age w)
   U.writeToLog $ "To " ++ agentId w ++ ", " ++ show vs
     ++ " has adjusted novelty " ++ show dObjNoveltyAdj
+    ++ " and best fits classifier model " ++ show cl
   U.writeToLog $ agentId w ++ " sees " ++ show vs
     ++ " and chooses " ++ show (view action r)
+    ++ " based on response model " ++ show sl
   return (dObjNovelty, dObjNoveltyAdj, r, w')
 
 describeModels
@@ -609,3 +621,11 @@ writeRawStats n f xs = do
   t <- U.currentTime
   liftIO . appendFile f $
     "time=" ++ show t ++ ",agent=" ++ n ++ ',':raw xs ++ "\n"
+
+-- mean :: (Eq a, Fractional a, Foldable t) => t a -> a
+mean :: (Fractional a, Eq a) => [a] -> a
+mean xs
+  | count == 0 = error "no data"
+  | otherwise = total / count
+  where (total, count) = foldr f (0, 0) xs
+        f x (y, n) = (y+x, n+1)
