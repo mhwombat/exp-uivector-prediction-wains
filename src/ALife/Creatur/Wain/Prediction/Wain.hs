@@ -207,11 +207,12 @@ startRound = do
   zoom U.uCurrVector $ putPS xs
   let actual = head xs
   ps <- zoom U.uPredictions getPS
-  let predicted = mean . map uiToDouble $ thirdOfThree ps
-  let err = abs (uiToDouble actual - predicted)
-  U.writeToLog $ "actual=" ++ show actual
-    ++ " predicted=" ++ show predicted
-    ++ " err=" ++ show err
+  when (not . null $ ps) $ do
+    let predicted = mean . map uiToDouble $ thirdOfThree ps
+    let err = abs (uiToDouble actual - predicted)
+    U.writeToLog $ "actual=" ++ show actual
+      ++ " predicted=" ++ show predicted
+      ++ " err=" ++ show err
   margin <- use U.uAccuracyMargin
   let a = doubleToUI . enforceRange unitInterval $
             (uiToDouble actual - uiToDouble margin)
