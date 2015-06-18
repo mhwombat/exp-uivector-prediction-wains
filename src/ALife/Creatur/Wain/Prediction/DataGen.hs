@@ -14,8 +14,7 @@ module ALife.Creatur.Wain.Prediction.DataGen where
 
 import qualified ALife.Creatur as A
 import qualified ALife.Creatur.Database as D
-import ALife.Creatur.Wain.UnitInterval (UIDouble, doubleToUI, uiApply)
--- import ALife.Creatur.Wain.UnitInterval (UIDouble, doubleToUI)
+import ALife.Creatur.Wain.UnitInterval (UIDouble, doubleToUI)
 import qualified ALife.Creatur.Wain.Prediction.Universe as U
 import Control.Lens
 import Control.Monad.IO.Class (liftIO)
@@ -23,8 +22,11 @@ import Control.Monad.Random (Rand, RandomGen, evalRandIO, getRandomR)
 import Control.Monad.State.Lazy (StateT)
 
 -- We want four records per hour, so that's 360 records in a day.
-recordNumToRadians :: Int -> UIDouble
-recordNumToRadians x = doubleToUI $ (2 * pi * fromIntegral x)/360
+recordNumToRadians :: Int -> Double
+recordNumToRadians x = (2 * pi * fromIntegral x)/360
+
+oneInterval :: Double
+oneInterval = recordNumToRadians 1
 
 -- genRecord :: RandomGen r => Int -> Rand r [Double]
 -- genRecord t = do
@@ -60,15 +62,19 @@ nextVector = do
   U.writeToLog $ "Next record to mine: " ++ show xs
   return xs
 
-nextVector' :: RandomGen r => String -> UIDouble -> Rand r [UIDouble]
+nextVector' :: RandomGen r => String -> Double -> Rand r [UIDouble]
 nextVector' "Prediction10" _ = return [doubleToUI 0.35]
 
 nextVector' "Prediction20" _ = do
   x <- getRandomR (-0.01,0.01)
   return [doubleToUI (0.35 + x)]
 
-nextVector' "Prediction30" t = return [t, t]
-nextVector' "Prediction40" t = return [uiApply (*0.75) t, t]
-nextVector' "Prediction50" t = return [uiApply sin t, t]
+nextVector' "Prediction30" t
+  = return [doubleToUI $ sin (t - oneInterval), doubleToUI $ sin t]
+
+-- nextVector' "Prediction40" t = return [uiApply (*0.75) t, t]
+
+-- nextVector' "Prediction50" t = return [uiApply sin t, t]
+
 nextVector' _             _ = error "No such experiment"
 -- add more randomness
