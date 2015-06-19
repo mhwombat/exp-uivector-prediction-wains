@@ -72,6 +72,9 @@ nextVector' "Prediction20" _ = do
 nextVector' "Prediction30" t
   = return [doubleToUI $ sin (t - oneInterval), doubleToUI $ sin t]
 
+nextVector' "Prediction40" t
+  = return [doubleToUI $ sin (2*(t - oneInterval)), doubleToUI $ sin t]
+
 -- nextVector' "Prediction40" t = return [uiApply (*0.75) t, t]
 
 -- nextVector' "Prediction50" t = return [uiApply sin t, t]
