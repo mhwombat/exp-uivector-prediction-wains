@@ -53,7 +53,7 @@ oneInterval = recordNumToRadians 1
 --   let ss = map formatRecord rs
 --   putStrLn $ unlines ss
 
-compressedSin ∷ Floating a ⇒ a → a
+compressedSin :: Floating a => a -> a
 compressedSin x = (sin x)/2 + 0.5
 
 nextVector :: (A.Agent w, D.SizedRecord w) => StateT (U.Universe w) IO [UIDouble]
