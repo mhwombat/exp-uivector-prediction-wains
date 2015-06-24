@@ -173,3 +173,33 @@ Test-suite prediction-tests
                     vector ==0.10.*,
                     QuickCheck ==2.7.* || ==2.8.*
   Other-modules:    ALife.Creatur.Wain.Prediction.TestUtils
+
+-- executable prediction-benchmark
+--   main-is:          test/Benchmark.hs
+--   ghc-options:      -Wall -Werror -O2 -rtsopts -threaded
+--   build-depends:
+--                     app-settings ==0.2.* && >=0.2.0.5,
+--                     array ==0.5.*,
+--                     base >=4.8 && <5,
+--                     cereal ==0.4.*,
+--                     cond ==0.4.*,
+--                     colour ==2.3.*,
+--                     containers ==0.5.*,
+--                     creatur ==5.9.6,
+--                     creatur-wains ==7.4.5,
+--                     directory ==1.2.*,
+--                     filepath ==1.4.*,
+--                     lens ==4.11.*,
+--                     MonadRandom ==0.4.*,
+--                     mtl ==2.2.*,
+--                     old-locale ==1.0.*,
+--                     random ==1.1.*,
+--                     som ==8.0.*,
+--                     split ==0.2.*,
+--                     time ==1.5.*,
+--                     transformers ==0.4.*,
+--                     unix ==2.7.*,
+--                     vector ==0.10.*,
+--                     zlib ==0.6.*
+--   hs-source-dirs:   src
+

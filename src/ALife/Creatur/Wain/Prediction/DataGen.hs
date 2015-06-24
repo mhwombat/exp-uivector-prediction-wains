@@ -53,6 +53,8 @@ oneInterval = recordNumToRadians 1
 --   let ss = map formatRecord rs
 --   putStrLn $ unlines ss
 
+compressedSin x = (sin x)/2 + 0.5
+
 nextVector :: (A.Agent w, D.SizedRecord w) => StateT (U.Universe w) IO [UIDouble]
 nextVector = do
   t <- fmap recordNumToRadians U.currentTime
@@ -70,10 +72,12 @@ nextVector' "Prediction20" _ = do
   return [doubleToUI (0.35 + x)]
 
 nextVector' "Prediction30" t
-  = return [doubleToUI $ sin (t - oneInterval), doubleToUI $ sin t]
+  = return [ doubleToUI $ compressedSin (t - oneInterval),
+             doubleToUI $ compressedSin t ]
 
 nextVector' "Prediction40" t
-  = return [doubleToUI $ sin (2*(t - oneInterval)), doubleToUI $ sin t]
+  = return [ doubleToUI $ compressedSin (2*(t - oneInterval)),
+             doubleToUI $ compressedSin t ]
 
 -- nextVector' "Prediction40" t = return [uiApply (*0.75) t, t]
 
