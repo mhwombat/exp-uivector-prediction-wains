@@ -83,6 +83,7 @@ import qualified ALife.Creatur.Universe as U
 import qualified ALife.Creatur.Wain.Checkpoint as CP
 import ALife.Creatur.Wain.Prediction.Action (Action)
 import ALife.Creatur.Wain.Response (Response)
+import ALife.Creatur.Wain.PlusMinusOne (PM1Double)
 import ALife.Creatur.Wain.UnitInterval (UIDouble, doubleToUI)
 import Control.Exception (SomeException, try)
 import Control.Lens hiding (Setting)
@@ -107,7 +108,7 @@ data Universe a = Universe
     _uVectorLength :: Int,
     _uClassifierSizeRange :: (Word16, Word16),
     _uDeciderSizeRange :: (Word16, Word16),
-    _uDevotionRange :: (Double, Double),
+    _uDevotionRange :: (UIDouble, UIDouble),
     _uMaturityRange :: (Word16, Word16),
     _uMaxAge :: Int,
     _uInitialPopulationSize :: Int,
@@ -118,13 +119,13 @@ data Universe a = Universe
     _uBaseMetabolismDeltaE :: Double,
     _uEnergyCostPerByte :: Double,
     _uChildCostFactor :: Double,
-    _uFlirtingFrequency :: Double,
+    _uFlirtingFrequency :: UIDouble,
     _uPopControlDeltaE :: Persistent Double,
-    _uOutcomeRange :: (Double, Double),
-    _uClassifierR0Range :: (Double, Double),
-    _uClassifierDRange :: (Double, Double),
-    _uDeciderR0Range :: (Double, Double),
-    _uDeciderDRange :: (Double, Double),
+    _uOutcomeRange :: (PM1Double, PM1Double),
+    _uClassifierR0Range :: (UIDouble, UIDouble),
+    _uClassifierDRange :: (UIDouble, UIDouble),
+    _uDeciderR0Range :: (UIDouble, UIDouble),
+    _uDeciderDRange :: (UIDouble, UIDouble),
     _uCheckpoints :: [CP.Checkpoint],
     _uCurrVector :: Persistent [UIDouble],
     _uPrevVector :: Persistent [UIDouble],
@@ -184,7 +185,7 @@ cDeciderSizeRange :: Setting (Word16, Word16)
 cDeciderSizeRange
   = requiredSetting "deciderSizeRange"
     
-cDevotionRange :: Setting (Double, Double)
+cDevotionRange :: Setting (UIDouble, UIDouble)
 cDevotionRange
   = requiredSetting "devotionRange"
 
@@ -218,22 +219,22 @@ cEnergyCostPerByte = requiredSetting "energyCostPerByte"
 cChildCostFactor :: Setting Double
 cChildCostFactor = requiredSetting "childCostFactor"
 
-cFlirtingFrequency :: Setting Double
+cFlirtingFrequency :: Setting UIDouble
 cFlirtingFrequency = requiredSetting "flirtingFrequency"
 
-cOutcomeRange :: Setting (Double,Double)
+cOutcomeRange :: Setting (PM1Double, PM1Double)
 cOutcomeRange = requiredSetting "outcomeRange"
 
-cClassifierR0Range :: Setting (Double,Double)
+cClassifierR0Range :: Setting (UIDouble, UIDouble)
 cClassifierR0Range = requiredSetting "classifierR0Range"
 
-cClassifierDRange :: Setting (Double,Double)
+cClassifierDRange :: Setting (UIDouble, UIDouble)
 cClassifierDRange = requiredSetting "classifierDecayRange"
 
-cDeciderR0Range :: Setting (Double,Double)
+cDeciderR0Range :: Setting (UIDouble, UIDouble)
 cDeciderR0Range = requiredSetting "deciderR0Range"
 
-cDeciderDRange :: Setting (Double,Double)
+cDeciderDRange :: Setting (UIDouble, UIDouble)
 cDeciderDRange = requiredSetting "deciderDecayRange"
 
 cCheckpoints :: Setting [CP.Checkpoint]

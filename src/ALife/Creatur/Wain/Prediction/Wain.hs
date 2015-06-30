@@ -40,6 +40,7 @@ import ALife.Creatur.Wain.Classifier(buildClassifier)
 import ALife.Creatur.Wain.Decider(buildDecider)
 import ALife.Creatur.Wain.GeneticSOM (RandomExponentialParams(..),
   randomExponential, numModels, schemaQuality, toList)
+import ALife.Creatur.Wain.PlusMinusOne (pm1ToDouble)
 import ALife.Creatur.Wain.Pretty (pretty)
 import ALife.Creatur.Wain.Raw (raw)
 import ALife.Creatur.Wain.Response (Response, randomResponse, action,
@@ -93,7 +94,7 @@ randomPredictorWain wainName u classifierSize deciderSize = do
                 _dRange = view U.uDeciderDRange u }
   fd <- randomExponential fdp
   xs <- replicateM (fromIntegral deciderSize) $
-          randomResponse 1 (numModels c) (view U.uOutcomeRange u)
+          randomResponse 1 (numModels c) 3 (view U.uOutcomeRange u)
   cw <- (makeWeights . take 3) <$> getRandomRs unitInterval
   sw <- (makeWeights . take 3) <$> getRandomRs unitInterval
   rw <- (makeWeights . take 2) <$> getRandomRs unitInterval
@@ -109,7 +110,7 @@ randomPredictorWain wainName u classifierSize deciderSize = do
 data Summary = Summary
   {
     _rPopSize :: Int,
-    _rVectorNovelty :: Double,
+    _rVectorNovelty :: UIDouble,
     _rVectorAdjustedNovelty :: Int,
     _rPredDeltaE :: Double,
     _rChildPredDeltaE :: Double,
@@ -165,25 +166,25 @@ initSummary p = Summary
 summaryStats :: Summary -> [Stats.Statistic]
 summaryStats r =
   [
-    Stats.uiStat "pop. size" (view rPopSize r),
-    Stats.uiStat "DO novelty" (view rVectorNovelty r),
+    Stats.iStat "pop. size" (view rPopSize r),
+    Stats.dStat "DO novelty" (view rVectorNovelty r),
     Stats.iStat "DO novelty (adj.)"
       (view rVectorAdjustedNovelty r),
-    Stats.uiStat "adult prediction Δe" (view rPredDeltaE r),
-    Stats.uiStat "child prediction Δe" (view rChildPredDeltaE r),
-    Stats.uiStat "adult metabolism Δe" (view rMetabolismDeltaE r),
-    Stats.uiStat "child metabolism Δe" (view rChildMetabolismDeltaE r),
-    Stats.uiStat "adult pop. control Δe" (view rPopControlDeltaE r),
-    Stats.uiStat "child pop. control Δe" (view rChildPopControlDeltaE r),
-    Stats.uiStat "adult flirting Δe" (view rFlirtingDeltaE r),
-    Stats.uiStat "adult mating Δe" (view rMatingDeltaE r),
-    Stats.uiStat "adult old age Δe" (view rOldAgeDeltaE r),
-    Stats.uiStat "child old age Δe" (view rChildOldAgeDeltaE r),
-    Stats.uiStat "other adult mating Δe" (view rPartnerMatingDeltaE r),
-    Stats.uiStat "adult net Δe" (view rNetDeltaE r),
-    Stats.uiStat "child net Δe" (view rChildNetDeltaE r),
-    Stats.uiStat "value pred. err" (view rValuePredictionErr r),
-    Stats.uiStat "reward pred. err" (view rRewardPredictionErr r),
+    Stats.dStat "adult prediction Δe" (view rPredDeltaE r),
+    Stats.dStat "child prediction Δe" (view rChildPredDeltaE r),
+    Stats.dStat "adult metabolism Δe" (view rMetabolismDeltaE r),
+    Stats.dStat "child metabolism Δe" (view rChildMetabolismDeltaE r),
+    Stats.dStat "adult pop. control Δe" (view rPopControlDeltaE r),
+    Stats.dStat "child pop. control Δe" (view rChildPopControlDeltaE r),
+    Stats.dStat "adult flirting Δe" (view rFlirtingDeltaE r),
+    Stats.dStat "adult mating Δe" (view rMatingDeltaE r),
+    Stats.dStat "adult old age Δe" (view rOldAgeDeltaE r),
+    Stats.dStat "child old age Δe" (view rChildOldAgeDeltaE r),
+    Stats.dStat "other adult mating Δe" (view rPartnerMatingDeltaE r),
+    Stats.dStat "adult net Δe" (view rNetDeltaE r),
+    Stats.dStat "child net Δe" (view rChildNetDeltaE r),
+    Stats.dStat "value pred. err" (view rValuePredictionErr r),
+    Stats.dStat "reward pred. err" (view rRewardPredictionErr r),
     Stats.iStat "bore" (view rBirthCount r),
     Stats.iStat "weaned" (view rWeanCount r),
     Stats.iStat "flirted" (view rFlirtCount r),
@@ -201,10 +202,18 @@ data Experiment = Experiment
   }
 makeLenses ''Experiment
 
+scaledDelta :: UIDouble -> UIDouble -> UIDouble
+scaledDelta x y = doubleToUI $ (uiToDouble x - uiToDouble y)/2 + 0.5
+
 startRound :: StateT (U.Universe PredictorWain) IO ()
 startRound = do
+  xsOld <- zoom U.uCurrVector getPS
   xs <- nextVector
-  zoom U.uCurrVector $ putPS xs
+  let deltas = zipWith scaledDelta xs xsOld
+    -- xs is shorter because it doesn't include any deltas, so the
+    -- result will be the same length as xs, and won't include any
+    -- deltas of previous deltas.
+  zoom U.uCurrVector $ putPS (xs ++ deltas)
   let actual = head xs
   ps <- zoom U.uPredictions getPS
   when (not . null $ ps) $ do
@@ -367,7 +376,8 @@ rewardPrediction = do
         agentId a ++ " predicted " ++ show predicted
         ++ ", actual value was " ++ show actual
         ++ ", reward is " ++ show deltaE
-      let err = abs $ uiToDouble actual - uiToDouble predicted
+      let err = abs $
+                  uiToDouble actual - uiToDouble predicted
       assign (summary . rValuePredictionErr) err
       adjustWainEnergy subject deltaE rPredDeltaE rChildPredDeltaE
       letSubjectReflect r'
@@ -448,12 +458,13 @@ makePrediction = do
 chooseAction3
   :: PredictorWain -> [UIDouble]
     -> StateT (U.Universe PredictorWain) IO
-        (Double, Int, Response Action, PredictorWain)
+        (UIDouble, Int, Response Action, PredictorWain)
 chooseAction3 w vs = do
   whenM (use U.uShowDeciderModels) $ describeModels w
   let (cl:_, sl, r, w', xs, dObjNovelty:_) = chooseAction [vs] w
   whenM (use U.uShowPredictions) $ describeOutcomes w xs
-  let dObjNoveltyAdj = round $ dObjNovelty * fromIntegral (view age w)
+  let dObjNoveltyAdj = round . uiToDouble $
+        dObjNovelty * fromIntegral (view age w)
   U.writeToLog $ "To " ++ agentId w ++ ", " ++ show vs
     ++ " has adjusted novelty " ++ show dObjNoveltyAdj
     ++ " and best fits classifier model " ++ show cl
@@ -475,7 +486,8 @@ describeOutcomes
 describeOutcomes w = mapM_ (U.writeToLog . f)
   where f (r, l) = view name w ++ "'s predicted outcome of "
                      ++ show (view action r) ++ " is "
-                     ++ (printf "%.3f" . fromJust . view outcome $ r)
+                     ++ (printf "%.3f" . pm1ToDouble . fromJust .
+                          view outcome $ r)
                      ++ " from model " ++ show l
 
 --
@@ -491,7 +503,7 @@ applyPopControl = do
 maybeFlirt :: StateT Experiment IO ()
 maybeFlirt = do
   frequency <- use (universe . U.uFlirtingFrequency)
-  (x :: Double) <- getRandom
+  x <- getRandom
   when (x < frequency) flirt
 
 flirt :: StateT Experiment IO ()
@@ -525,7 +537,8 @@ killIfTooOld = do
   a <- view age <$> use subject
   maxAge <- use (universe . U.uMaxAge)
   when (fromIntegral a > maxAge) $
-    adjustWainEnergy subject (-100) rOldAgeDeltaE rChildOldAgeDeltaE
+    adjustWainEnergy subject (-1) rOldAgeDeltaE
+      rChildOldAgeDeltaE
 
 adjustPopControlDeltaE
   :: [Stats.Statistic] -> StateT (U.Universe PredictorWain) IO ()
@@ -579,7 +592,7 @@ totalEnergy = do
   b <- view energy <$> use partner
   c <- childEnergy <$> use subject
   d <- childEnergy <$> use partner
-  return (a + b, c + d)
+  return (uiToDouble a + uiToDouble b, uiToDouble c + uiToDouble d)
 
 printStats
   :: [[Stats.Statistic]] -> StateT (U.Universe PredictorWain) IO ()
@@ -594,7 +607,8 @@ adjustWainEnergy
 adjustWainEnergy wainSelector deltaE adultEnergySelector
     childEnergySelector = do
   x <- use wainSelector
-  let (x', adultDeltaE, childDeltaE) = adjustEnergy deltaE x
+  let (x', adultDeltaE, childDeltaE)
+        = adjustEnergy deltaE x
   (summary . adultEnergySelector) += adultDeltaE
   when (childDeltaE /= 0) $
     (summary . childEnergySelector) += childDeltaE
