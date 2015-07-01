@@ -449,6 +449,8 @@ makePrediction = do
   assign (summary.rVectorAdjustedNovelty) dObjNoveltyAdj
   assign subject a'
   ps <- zoom (universe . U.uPredictions) getPS
+  when null dObj $
+    zoom universe . U.writeToLog $ "dObj is null"
   let x = head dObj
   let xPredicted = predict (view action r) x
   zoom universe . U.writeToLog $
