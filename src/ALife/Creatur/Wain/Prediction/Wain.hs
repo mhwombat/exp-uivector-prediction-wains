@@ -214,6 +214,8 @@ startRound = do
     -- result will be the same length as xs, and won't include any
     -- deltas of previous deltas.
   zoom U.uCurrVector $ putPS (xs ++ deltas)
+  U.writeToLog $ "Current data: " ++ show xs
+  U.writeToLog $ "Deltas: " ++ show deltas
   let actual = head xs
   ps <- zoom U.uPredictions getPS
   when (not . null $ ps) $ do
@@ -228,6 +230,7 @@ startRound = do
   let b = doubleToUI . enforceRange unitInterval $
             (uiToDouble actual + uiToDouble margin)
   zoom U.uCurrentAccuracyRange $ putPS (a,b)
+  U.writeToLog $ "margins=" ++ show (a, b)
 
 finishRound :: StateT (U.Universe PredictorWain) IO ()
 finishRound = do
@@ -450,7 +453,7 @@ makePrediction = do
   assign subject a'
   ps <- zoom (universe . U.uPredictions) getPS
   when (null dObj) $
-    zoom universe . U.writeToLog $ "dObj is null"
+    zoom universe . U.writeToLog $ "WARNING: dObj is null"
   let x = head dObj
   let xPredicted = predict (view action r) x
   zoom universe . U.writeToLog $
