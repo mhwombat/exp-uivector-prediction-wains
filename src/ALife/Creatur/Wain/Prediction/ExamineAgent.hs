@@ -46,11 +46,11 @@ examine a = do
   putStrLn $ "name: " ++ show (view name a)
   -- appearance
   -- brain
-  putStrLn $ "devotion: " ++ printf "%5.3f" (view devotion a)
+  putStrLn $ "devotion: " ++ printf "%5.3f" (uiToDouble $ view devotion a)
   putStrLn $ "ageOfMaturity: " ++ show (view ageOfMaturity a)
   putStrLn $ "passionDelta: " ++ show (view passionDelta a)
-  putStrLn $ "energy: " ++ printf "%5.3f" (view energy a)
-  putStrLn $ "passion: " ++ printf "%5.3f" (view passion a)
+  putStrLn $ "energy: " ++ printf "%5.3f" (uiToDouble $ view energy a)
+  putStrLn $ "passion: " ++ printf "%5.3f" (uiToDouble $ view passion a)
   putStrLn $ "age: " ++ show (view age a)
   putStrLn $ "total # children borne: "
     ++ show (view childrenBorneLifetime a)

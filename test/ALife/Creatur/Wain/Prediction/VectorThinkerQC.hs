@@ -15,8 +15,8 @@ module ALife.Creatur.Wain.Prediction.VectorThinkerQC
     test
   ) where
 
-import ALife.Creatur.Wain.GeneticSOM (Thinker(..), diff)
-import ALife.Creatur.Wain.Weights (Weights, makeWeights, toDoubles)
+import ALife.Creatur.Wain.WeightsInternal (Weights, makeWeights,
+  toUIDoubles)
 import ALife.Creatur.Wain.Prediction.VectorThinker
 import ALife.Creatur.Wain.Prediction.TestUtils
   (prop_serialize_round_trippable, prop_genetic_round_trippable,
@@ -38,27 +38,16 @@ instance Arbitrary Weights where
   arbitrary = sized sizedArbWeights
 
 equivWeights :: Weights -> Weights -> Bool
-equivWeights x y = and $ zipWith f (toDoubles x) (toDoubles y)
+equivWeights x y = and $ zipWith f (map uiToDouble $ toUIDoubles x)
+                                   (map uiToDouble $ toUIDoubles y)
   where f a b = abs (a - b) <= 1/255
+
 
 instance Arbitrary VectorThinker where
   arbitrary = VectorThinker <$> arbitrary
 
 equiv :: VectorThinker -> VectorThinker -> Bool
 equiv (VectorThinker a) (VectorThinker b) = equivWeights a b
-
-inRange :: Double -> Bool
-inRange x = 0 <= x && x <= 1
-
-prop_diff_in_range
-  :: VectorThinker -> [UIDouble] -> [UIDouble] -> Property
-prop_diff_in_range v a b = property . inRange $ diff v a b
-
-prop_adjust_preserves_range
-  :: VectorThinker -> [UIDouble] -> UIDouble -> [UIDouble] -> Property
-prop_adjust_preserves_range v a r b
-  = property . and . map (inRange . uiToDouble) $ adjust v a r' b
-  where r' = uiToDouble r
 
 test :: Test
 test = testGroup "ALife.Creatur.Wain.Prediction.VectorThinkerQC"
@@ -68,8 +57,5 @@ test = testGroup "ALife.Creatur.Wain.Prediction.VectorThinkerQC"
     testProperty "prop_genetic_round_trippable - VectorThinker"
       (prop_genetic_round_trippable equiv :: VectorThinker -> Property),
     testProperty "prop_diploid_identity - VectorThinker"
-      (prop_diploid_identity (==) :: VectorThinker -> Property),
-    testProperty "prop_diff_in_range" prop_diff_in_range,
-    testProperty "prop_adjust_preserves_range"
-      prop_adjust_preserves_range
+      (prop_diploid_identity (==) :: VectorThinker -> Property)
   ]
