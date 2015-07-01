@@ -470,9 +470,13 @@ chooseAction3
     -> StateT (U.Universe PredictorWain) IO
         (UIDouble, Int, Response Action, PredictorWain)
 chooseAction3 w vs = do
+  U.writeToLog $ "DEBUG 10"
   whenM (use U.uShowDeciderModels) $ describeModels w
+  U.writeToLog $ "DEBUG 12"
   let (cl:_, sl, r, w', xs, dObjNovelty:_) = chooseAction [vs] w
+  U.writeToLog $ "DEBUG 13"
   whenM (use U.uShowPredictions) $ describeOutcomes w xs
+  U.writeToLog $ "DEBUG 14"
   let dObjNoveltyAdj = round . uiToDouble $
         dObjNovelty * fromIntegral (view age w)
   U.writeToLog $ "To " ++ agentId w ++ ", " ++ show vs
