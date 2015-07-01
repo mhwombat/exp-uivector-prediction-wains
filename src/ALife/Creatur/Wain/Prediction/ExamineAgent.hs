@@ -15,13 +15,14 @@ module Main where
 
 import ALife.Creatur.Wain
 import ALife.Creatur.Wain.Brain
-import ALife.Creatur.Wain.Condition
 import ALife.Creatur.Wain.Response
 import qualified ALife.Creatur.Wain.Scenario as Scenario
 import ALife.Creatur.Wain.GeneticSOM
 import ALife.Creatur.Wain.Prediction.Action
 import ALife.Creatur.Wain.Prediction.Wain
 import ALife.Creatur.Wain.Prediction.Universe
+import ALife.Creatur.Wain.PlusMinusOne
+import ALife.Creatur.Wain.UnitInterval
 import Control.Lens
 import Control.Monad.State
 import Data.Map.Strict (elems)
@@ -81,15 +82,12 @@ prettyResponseModel :: (Label, Response Action) -> [String]
 prettyResponseModel (l, r) =
   [ "Model " ++ show l,
     "Differences: "
-      ++ formatVector "%5.3f"
-      (head . view Scenario.diffs . view scenario $ r),
-    "Energy: " ++ show
-      (view cEnergy . view Scenario.condition . view scenario $ r),
-    "Passion: " ++ show
-      (view cPassion . view Scenario.condition . view scenario $ r),
+      ++ formatVector "%5.3f" (map uiToDouble . head . view (scenario . Scenario.diffs) $ r),
+    "Energy: " ++ show (head . view (scenario . Scenario.condition) $ r),
+    "Passion: " ++ show ((!!2) . view (scenario . Scenario.condition) $ r),
     "Action: " ++ show (view action r),
     "Expected happiness change: "
-      ++ maybe "" (printf "%.3g") (view outcome r),
+      ++ maybe "" (printf "%.3g" . pm1ToDouble) (view outcome r),
     "-----" ]
 
 formatVector :: String -> [Double] -> String
