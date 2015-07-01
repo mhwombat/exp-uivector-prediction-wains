@@ -207,12 +207,16 @@ scaledDelta x y = doubleToUI $ (uiToDouble x - uiToDouble y)/2 + 0.5
 
 startRound :: StateT (U.Universe PredictorWain) IO ()
 startRound = do
+  U.writeToLog $ "DEBUG 1"
   xsOld <- zoom U.uCurrVector getPS
+  U.writeToLog $ "DEBUG 2"
   xs <- nextVector
+  U.writeToLog $ "DEBUG 3"
   let deltas = zipWith scaledDelta xs xsOld
     -- xs is shorter because it doesn't include any deltas, so the
     -- result will be the same length as xs, and won't include any
     -- deltas of previous deltas.
+  U.writeToLog $ "DEBUG 4"
   zoom U.uCurrVector $ putPS (xs ++ deltas)
   U.writeToLog $ "Current data: " ++ show xs
   U.writeToLog $ "Deltas: " ++ show deltas
