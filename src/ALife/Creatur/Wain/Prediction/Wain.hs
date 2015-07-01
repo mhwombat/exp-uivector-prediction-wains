@@ -477,8 +477,8 @@ chooseAction3 w vs = do
   U.writeToLog $ "DEBUG 13"
   whenM (use U.uShowPredictions) $ describeOutcomes w xs
   U.writeToLog $ "DEBUG 14"
-  let dObjNoveltyAdj = round . uiToDouble $
-        dObjNovelty * fromIntegral (view age w)
+  let dObjNoveltyAdj = round $
+        uiToDouble dObjNovelty * fromIntegral (view age w)
   U.writeToLog $ "To " ++ agentId w ++ ", " ++ show vs
     ++ " has adjusted novelty " ++ show dObjNoveltyAdj
     ++ " and best fits classifier model " ++ show cl
