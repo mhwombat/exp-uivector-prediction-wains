@@ -36,21 +36,3 @@ instance Thinker VectorThinker where
 instance Serialize VectorThinker
 instance W8.Genetic VectorThinker
 instance Diploid VectorThinker
-
--- weightedUiVectorDiff :: Weights -> [UIDouble] -> [UIDouble] -> Double
--- weightedUiVectorDiff ws xs ys
---   | null xs && null ys = 0
---   | null xs || null ys = 1
---   | otherwise         = weightedDiff ws' xs' ys'
---   where xs' = map uiToDouble xs
---         ys' = map uiToDouble ys
---         ws' = toDoubles ws
-
--- weightedDiff :: [Double] -> [Double] -> [Double] -> Double
--- weightedDiff ws xs ys
---   = sum . zipWith (*) ws . map abs $ zipWith (-) xs ys
-
--- makeUIVectorsSimilar :: [UIDouble] -> Double -> [UIDouble] -> [UIDouble]
--- makeUIVectorsSimilar xs r ys = map doubleToUI $ adjustVector xs' r ys'
---   where xs' = map uiToDouble xs
---         ys' = map uiToDouble ys

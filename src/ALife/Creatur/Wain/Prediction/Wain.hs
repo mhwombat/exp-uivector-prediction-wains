@@ -386,10 +386,19 @@ rewardPrediction = do
         ++ ", reward is " ++ show deltaE
       let err = abs $
                   uiToDouble actual - uiToDouble predicted
+      zoom universe . U.writeToLog $ "DEBUG 20 err=" ++ show err
       assign (summary . rValuePredictionErr) err
+      zoom universe . U.writeToLog $ "DEBUG 21"
       adjustWainEnergy subject deltaE rPredDeltaE rChildPredDeltaE
+      zoom universe . U.writeToLog $ "DEBUG 22"
       letSubjectReflect r'
+      zoom universe . U.writeToLog $ "DEBUG 23"
       zoom (universe . U.uPredictions) . putPS . remove3 (agentId a) $ ps
+      zoom universe . U.writeToLog $ "DEBUG 24"
+      a' <- use subject
+      zoom universe . U.writeToLog $ "DEBUG 25 - remove next line"
+      zoom universe $ describeModels a'
+      zoom universe . U.writeToLog $ "DEBUG 26"
 
 -- calculateRewards :: StateT (U.Universe PredictorWain) IO ()
 -- calculateRewards = do
