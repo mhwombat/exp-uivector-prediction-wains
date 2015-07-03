@@ -40,6 +40,10 @@ prop_idealPopControlDeltaE_counteracts_learning idealPop pop e deltaE
         p = getPositive pop
         e2 = e + getPositive deltaE
 
+-- prop_reflection_never_fails
+--   :: PredictorWain -> Response Action -> [UIDouble] -> Bool
+-- prop_reflection_never_fails x r p = deepseq (reflect [p] r x) True
+
 test :: Test
 test = testGroup "ALife.Creatur.Wain.Prediction.WainQC"
   [

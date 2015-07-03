@@ -39,7 +39,7 @@ import ALife.Creatur.Wain.Checkpoint (enforceAll)
 import ALife.Creatur.Wain.Classifier(buildClassifier)
 import ALife.Creatur.Wain.Decider(buildDecider)
 import ALife.Creatur.Wain.GeneticSOM (RandomExponentialParams(..),
-  randomExponential, numModels, schemaQuality, toList)
+  randomExponential, numModels, schemaQuality, toList, currentLearningRate)
 import ALife.Creatur.Wain.PlusMinusOne (pm1ToDouble)
 import ALife.Creatur.Wain.Pretty (pretty)
 import ALife.Creatur.Wain.Raw (raw)
@@ -391,14 +391,17 @@ rewardPrediction = do
       zoom universe . U.writeToLog $ "DEBUG 21"
       adjustWainEnergy subject deltaE rPredDeltaE rChildPredDeltaE
       zoom universe . U.writeToLog $ "DEBUG 22"
+      a' <- use subject
+      let wombat = view (brain . decider) a'
+      zoom universe . U.writeToLog $ "DEBUG decider learning rate=" ++ show (currentLearningRate wombat)
       letSubjectReflect r'
       zoom universe . U.writeToLog $ "DEBUG 23"
       zoom (universe . U.uPredictions) . putPS . remove3 (agentId a) $ ps
       zoom universe . U.writeToLog $ "DEBUG 24"
-      a' <- use subject
-      zoom universe . U.writeToLog $ "DEBUG 25 - remove next line"
-      zoom universe $ describeModels a'
-      zoom universe . U.writeToLog $ "DEBUG 26"
+      a'' <- use subject
+      let wombat' = view (brain . decider) a''
+      zoom universe . U.writeToLog $ "DEBUG decider learning rate=" ++ show (currentLearningRate wombat')
+
 
 -- calculateRewards :: StateT (U.Universe PredictorWain) IO ()
 -- calculateRewards = do
@@ -646,8 +649,11 @@ adjustSubjectPassion = subject %= adjustPassion
 letSubjectReflect
   :: Response Action -> StateT Experiment IO ()
 letSubjectReflect r = do
+  zoom universe . U.writeToLog $ "DEBUG 30 r=" ++ show r
   x <- use subject
+  zoom universe . U.writeToLog $ "DEBUG 31"
   p <- zoom (universe . U.uPrevVector) getPS
+  zoom universe . U.writeToLog $ "DEBUG 32 p=" ++ show p
   let (x', err) = reflect [p] r x
   assign subject x'
   assign (summary . rRewardPredictionErr) err
