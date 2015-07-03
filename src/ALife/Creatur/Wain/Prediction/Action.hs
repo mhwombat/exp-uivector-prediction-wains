@@ -47,7 +47,6 @@ instance Random Action where
   random = randomR (minBound,maxBound)
 
 predict :: Action -> UIDouble -> UIDouble
--- predict Down100 _ = doubleToUI 0
 predict Down100 = uiApply (\x -> enforceRange unitInterval (x - 1))
 predict Down095 = uiApply (\x -> enforceRange unitInterval (x - 0.95))
 predict Down090 = uiApply (\x -> enforceRange unitInterval (x - 0.90))

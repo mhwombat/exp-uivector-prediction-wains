@@ -483,6 +483,7 @@ chooseAction3
         (UIDouble, Int, Response Action, PredictorWain)
 chooseAction3 w vs = do
   U.writeToLog $ "DEBUG 10"
+  U.writeToLog $ "DEBUG 11 vs=" ++ show vs
   whenM (use U.uShowDeciderModels) $ describeModels w
   U.writeToLog $ "DEBUG 12"
   let (cl:_, sl, r, w', xs, dObjNovelty:_) = chooseAction [vs] w
