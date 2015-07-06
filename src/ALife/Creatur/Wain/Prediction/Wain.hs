@@ -31,10 +31,11 @@ module ALife.Creatur.Wain.Prediction.Wain
 import ALife.Creatur (agentId, isAlive)
 import ALife.Creatur.Task (checkPopSize)
 import ALife.Creatur.Wain (Wain, Label, buildWainAndGenerateGenome,
-  name, chooseAction, incAge, applyMetabolismCost, condition,
+  name, chooseAction, incAge, applyMetabolismCost, condition, happiness,
   weanMatureChildren, pruneDeadChildren, adjustEnergy, adjustPassion,
   reflect, mate, litter, brain, energy, childEnergy, age, wainSize)
 import ALife.Creatur.Wain.Brain (decider, Brain(..))
+import qualified ALife.Creatur.Wain.Brain as B
 import ALife.Creatur.Wain.Checkpoint (enforceAll)
 import ALife.Creatur.Wain.Classifier(buildClassifier)
 import ALife.Creatur.Wain.Decider(buildDecider)
@@ -655,6 +656,8 @@ letSubjectReflect r = do
   zoom universe . U.writeToLog $ "DEBUG 31"
   p <- zoom (universe . U.uPrevVector) getPS
   zoom universe . U.writeToLog $ "DEBUG 32 p=" ++ show p
+  zoom universe . U.writeToLog $ "DEBUG 33 happiness before=" ++ show (B.happiness (view brain x) (view (scenario . Sc.condition) r))
+  zoom universe . U.writeToLog $ "DEBUG 33 happiness after=" ++ show (happiness x)
   let (x', err) = reflect [p] r x
   assign subject x'
   assign (summary . rRewardPredictionErr) err
