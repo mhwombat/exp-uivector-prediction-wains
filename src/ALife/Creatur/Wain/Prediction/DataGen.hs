@@ -15,7 +15,8 @@ module ALife.Creatur.Wain.Prediction.DataGen where
 import qualified ALife.Creatur as A
 import qualified ALife.Creatur.Database as D
 import ALife.Creatur.Persistent (getPS)
-import ALife.Creatur.Wain.UnitInterval (UIDouble, doubleToUI)
+import ALife.Creatur.Wain.UnitInterval (UIDouble, doubleToUI,
+  forceDoubleToUI)
 import qualified ALife.Creatur.Wain.Prediction.Universe as U
 import Control.Lens
 import Control.Monad.IO.Class (liftIO)
@@ -78,7 +79,7 @@ nextVector' "Prediction10" _ _ = return [doubleToUI 0.35]
 -- A single value that is somewhat constant, but with small fluctuations
 nextVector' "Prediction20" _ _ = do
   x <- getRandomR (-0.01,0.01)
-  return [doubleToUI (0.35 + x)]
+  return [forceDoubleToUI (0.35 + x)]
 
 -- Two periodic values, where the first value is whatever the second
 -- value was last time.
@@ -98,7 +99,7 @@ nextVector' "Prediction50" t _ = do
   rs <- getRandomRs (-0.01,0.01)
   let xs = [compressedSin (2*(t - oneInterval)), compressedSin t]
              :: [Double]
-  return . map doubleToUI $ zipWith (+) rs xs
+  return . map forceDoubleToUI $ zipWith (+) rs xs
 
 -- Two random values, where the first value is whatever the second
 -- value was last time.
