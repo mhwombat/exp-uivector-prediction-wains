@@ -96,9 +96,9 @@ nextVector' "Prediction40" t _
 -- value was last time, plus a small random bit of noise.
 nextVector' "Prediction50" t _ = do
   rs <- getRandomRs (-0.01,0.01)
-  return $ zipWith (+) rs
-            [ doubleToUI $ compressedSin (2*(t - oneInterval)),
-              doubleToUI $ compressedSin t ]
+  let xs = [compressedSin (2*(t - oneInterval)), compressedSin t]
+             :: [Double]
+  return . map doubleToUI $ zipWith (+) rs xs
 
 -- Two random values, where the first value is whatever the second
 -- value was last time.

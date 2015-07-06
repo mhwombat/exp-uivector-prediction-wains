@@ -267,7 +267,7 @@ config2Universe getSetting =
       _uShowDeciderModels = getSetting cShowDeciderModels,
       _uShowPredictions = getSetting cShowPredictions,
       _uSleepBetweenTasks = getSetting cSleepBetweenTasks,
-      _uVectorLength = getSetting cVectorLength,
+      _uVectorLength = n,
       _uClassifierSizeRange = getSetting cClassifierSizeRange,
       _uDeciderSizeRange = getSetting cDeciderSizeRange,
       _uDevotionRange = getSetting cDevotionRange,
@@ -290,8 +290,8 @@ config2Universe getSetting =
       _uDeciderR0Range = getSetting cDeciderR0Range,
       _uDeciderDRange = getSetting cDeciderDRange,
       _uCheckpoints = getSetting cCheckpoints,
-      _uCurrVector = mkPersistent [] (workDir ++ "/currVector"),
-      _uPrevVector = mkPersistent [] (workDir ++ "/prevVector"),
+      _uCurrVector = mkPersistent zeroes (workDir ++ "/currVector"),
+      _uPrevVector = mkPersistent zeroes (workDir ++ "/prevVector"),
       _uCurrentAccuracyRange
         = mkPersistent (doubleToUI 0, doubleToUI 0)
             (workDir ++ "/accuracy"),
@@ -305,3 +305,5 @@ config2Universe getSetting =
         (a, b) = getSetting cPopulationAllowedRange
         a' = round (fromIntegral pIdeal * a)
         b' = round (fromIntegral pIdeal * b)
+        n = getSetting cVectorLength
+        zeroes = replicate n 0
