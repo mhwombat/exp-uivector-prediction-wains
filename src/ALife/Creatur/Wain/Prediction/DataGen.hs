@@ -21,7 +21,7 @@ import qualified ALife.Creatur.Wain.Prediction.Universe as U
 import Control.Lens
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Random (Rand, RandomGen, evalRandIO, getRandom,
-  getRandoms, getRandomR, getRandomRs)
+  getRandomR, getRandomRs)
 import Control.Monad.State.Lazy (StateT)
 
 -- We want four records per hour, so that's 360 records in a day.
@@ -65,8 +65,8 @@ nextVector = do
   t <- fmap recordNumToRadians U.currentTime
   xsOld <- zoom U.uCurrVector getPS
   experimentName <- use U.uExperimentName
-  -- let xs = [doubleToUI . sin . recordNumToRadians $ t, doubleToUI . fromIntegral $ t `mod` 360]
   xs <- liftIO . evalRandIO $ nextVector' experimentName t xsOld
+  U.writeToLog $ "Prev record to mine: " ++ show xsOld
   U.writeToLog $ "Next record to mine: " ++ show xs
   return xs
 
@@ -103,14 +103,9 @@ nextVector' "Prediction50" t _ = do
 
 -- Two random values, where the first value is whatever the second
 -- value was last time.
-nextVector' "Prediction60" t vOld =
-  if t == 0
-    then do
-      rs <- getRandoms
-      return $ take 2 rs
-    else do
-      r <- getRandom
-      return [ vOld !! 2, r]
+nextVector' "Prediction60" _ vOld = do
+  r <- getRandom
+  return [ vOld !! 1, r]
 
 nextVector' _ _ _ = error "No such experiment"
 -- add more randomness
