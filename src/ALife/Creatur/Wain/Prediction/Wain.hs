@@ -19,7 +19,7 @@ module ALife.Creatur.Wain.Prediction.Wain
   (
     PredictorWain,
     randomPredictorWain,
-    VectorThinker(..),
+    VectorTweaker(..),
     run,
     startRound,
     finishRound,
@@ -40,19 +40,18 @@ import ALife.Creatur.Wain.Checkpoint (enforceAll)
 import ALife.Creatur.Wain.Classifier(buildClassifier)
 import ALife.Creatur.Wain.Decider(buildDecider)
 import ALife.Creatur.Wain.GeneticSOM (RandomExponentialParams(..),
-  randomExponential, numModels, schemaQuality, toList, currentLearningRate)
+  randomExponential, schemaQuality, currentLearningRate, modelMap)
 import ALife.Creatur.Wain.PlusMinusOne (pm1ToDouble)
 import ALife.Creatur.Wain.Pretty (pretty)
 import ALife.Creatur.Wain.Raw (raw)
-import ALife.Creatur.Wain.Response (Response, randomResponse, action,
-  outcome, scenario)
+import ALife.Creatur.Wain.Response (Response, action, outcome, scenario)
 import ALife.Creatur.Wain.UnitInterval (UIDouble, doubleToUI,
   uiToDouble)
 import ALife.Creatur.Wain.Util (unitInterval, inRange, enforceRange)
 import qualified ALife.Creatur.Wain.Statistics as Stats
 import ALife.Creatur.Wain.Prediction.Action (Action(..), predict)
 import ALife.Creatur.Wain.Prediction.DataGen (nextVector)
-import ALife.Creatur.Wain.Prediction.VectorThinker (VectorThinker(..))
+import ALife.Creatur.Wain.Prediction.VectorTweaker (VectorTweaker(..))
 import qualified ALife.Creatur.Wain.Prediction.Universe as U
 import ALife.Creatur.Persistent (getPS, putPS)
 import ALife.Creatur.Wain.PersistentStatistics (updateStats, readStats,
@@ -62,51 +61,51 @@ import ALife.Creatur.Wain.Statistics (summarise)
 import ALife.Creatur.Wain.Weights (makeWeights)
 import Control.Conditional (whenM)
 import Control.Lens hiding (universe)
-import Control.Monad (replicateM, when, unless)
+import Control.Monad (when, unless)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Random (Rand, RandomGen, getRandomR, getRandomRs,
-  getRandom, getRandoms, evalRandIO)
+  getRandom, evalRandIO)
 import Control.Monad.State.Lazy (StateT, execStateT, get, put)
 import Data.List (intercalate)
-import Data.Maybe (fromJust)
+import Data.Map (toList)
 import Data.Word (Word16)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath (dropFileName)
 import Text.Printf (printf)
 
-type PredictorWain = Wain [UIDouble] VectorThinker  Action
+type PredictorWain = Wain [UIDouble] VectorTweaker  Action
 
 randomPredictorWain
   :: RandomGen r
     => String -> U.Universe PredictorWain -> Word16 -> Word16
       -> Rand r PredictorWain
-randomPredictorWain wainName u classifierSize deciderSize = do
+randomPredictorWain wName u classifierSize deciderSize = do
   let k = view U.uVectorLength u
-  classifierModels <- replicateM (fromIntegral classifierSize)
-    (fmap (take k) getRandoms)
   let fcp = RandomExponentialParams
                { _r0Range = view U.uClassifierR0Range u,
                  _dRange = view U.uClassifierDRange u }
   fc <- randomExponential fcp
   ws <- (makeWeights . take k) <$> getRandomRs unitInterval
-  let c = buildClassifier fc (VectorThinker ws) classifierModels
+  classifierThreshold <- getRandom
+  let c = buildClassifier fc classifierSize classifierThreshold (VectorTweaker ws)
   let fdp = RandomExponentialParams
               { _r0Range = view U.uDeciderR0Range u,
                 _dRange = view U.uDeciderDRange u }
   fd <- randomExponential fdp
-  xs <- replicateM (fromIntegral deciderSize) $
-          randomResponse 1 (numModels c) 3 (view U.uOutcomeRange u)
+  deciderThreshold <- getRandom
   cw <- (makeWeights . take 3) <$> getRandomRs unitInterval
   sw <- (makeWeights . take 3) <$> getRandomRs unitInterval
   rw <- (makeWeights . take 2) <$> getRandomRs unitInterval
-  let dr = buildDecider fd cw sw rw xs
+  let dr = buildDecider fd deciderSize deciderThreshold cw sw rw
   hw <- (makeWeights . take 3) <$> getRandomRs unitInterval
-  let b = Brain c dr hw
-  dv <- getRandomR . view U.uDevotionRange $ u
-  m <- getRandomR . view U.uMaturityRange $ u
-  p <- getRandomR unitInterval
-  let app = replicate k $ doubleToUI 0
-  return $ buildWainAndGenerateGenome wainName app b dv m p
+  let wBrain = Brain c dr hw
+  wDevotion <- getRandomR . view U.uDevotionRange $ u
+  wAgeOfMaturity <- getRandomR . view U.uMaturityRange $ u
+  wPassionDelta <- getRandom
+  wDefaultOutcome <- getRandom
+  let wAppearance = replicate k $ doubleToUI 0
+  return $ buildWainAndGenerateGenome wName wAppearance wBrain wDevotion
+    wAgeOfMaturity wPassionDelta wDefaultOutcome
 
 data Summary = Summary
   {
@@ -505,7 +504,7 @@ chooseAction3 w vs = do
 describeModels
   :: PredictorWain -> StateT (U.Universe PredictorWain) IO ()
 describeModels w = mapM_ (U.writeToLog . f) ms
-  where ms = toList . view decider $ view brain w
+  where ms = toList . modelMap . view (brain . decider) $ w
         f (l, r) = view name w ++ "'s decider model " ++ show l ++ "="
                      ++ pretty r
 
@@ -515,8 +514,7 @@ describeOutcomes
 describeOutcomes w = mapM_ (U.writeToLog . f)
   where f (r, l) = view name w ++ "'s predicted outcome of "
                      ++ show (view action r) ++ " is "
-                     ++ (printf "%.3f" . pm1ToDouble . fromJust .
-                          view outcome $ r)
+                     ++ (printf "%.3f" . pm1ToDouble . view outcome $ r)
                      ++ " from model " ++ show l
 
 --
