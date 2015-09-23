@@ -18,7 +18,7 @@ import ALife.Creatur (programVersion)
 import ALife.Creatur.Daemon (Job(..), launchInteractive)
 import ALife.Creatur.Task (runInteractingAgents, simpleJob)
 import ALife.Creatur.Wain (programVersion)
-import ALife.Creatur.Wain.Prediction.Wain (PredictorWain, run, 
+import ALife.Creatur.Wain.Prediction.Experiment (PredictorWain, run, 
   startRound, finishRound)
 import ALife.Creatur.Wain.Prediction.Universe (Universe(..),
   writeToLog, loadUniverse, uSleepBetweenTasks)

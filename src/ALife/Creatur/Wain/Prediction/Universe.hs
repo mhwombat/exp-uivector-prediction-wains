@@ -31,30 +31,36 @@ module ALife.Creatur.Wain.Prediction.Universe
     uChecklist,
     uStatsFile,
     uRawStatsFile,
-    uShowDeciderModels,
+    uShowPredictorModels,
     uShowPredictions,
+    uGenFmris,
     uSleepBetweenTasks,
     uVectorLength,
     uClassifierSizeRange,
-    uDeciderSizeRange,
+    uPredictorSizeRange,
     uDevotionRange,
     uMaturityRange,
     uMaxAge,
     uInitialPopulationSize,
     uIdealPopulationSize,
     uPopulationAllowedRange,
+    uPopControl,
+    uEnergyToAddWain,
     uAccuracyMargin,
     uAccuracyDeltaE,
     uBaseMetabolismDeltaE,
-    uEnergyCostPerByte,
+    uEnergyCostPerClassifierModel,
     uChildCostFactor,
     uFlirtingFrequency,
     uPopControlDeltaE,
-    uOutcomeRange,
+    uClassifierThresholdRange,
     uClassifierR0Range,
     uClassifierDRange,
-    uDeciderR0Range,
-    uDeciderDRange,
+    uPredictorThresholdRange,
+    uPredictorR0Range,
+    uPredictorDRange,
+    uDefaultOutcomeRange,
+    uDepthRange,
     uCheckpoints,
     uCurrVector,
     uPrevVector,
@@ -89,7 +95,7 @@ import Control.Exception (SomeException, try)
 import Control.Lens hiding (Setting)
 import Data.AppSettings (Setting(..), GetSetting(..),
   FileLocation(Path), readSettings)
-import Data.Word (Word16)
+import Data.Word (Word8, Word16)
 import System.Directory (makeRelativeToCurrentDirectory)
 
 data Universe a = Universe
@@ -102,30 +108,36 @@ data Universe a = Universe
     _uChecklist :: CL.PersistentChecklist,
     _uStatsFile :: FilePath,
     _uRawStatsFile :: FilePath,
-    _uShowDeciderModels :: Bool,
+    _uShowPredictorModels :: Bool,
     _uShowPredictions :: Bool,
+    _uGenFmris :: Bool,
     _uSleepBetweenTasks :: Int,
     _uVectorLength :: Int,
     _uClassifierSizeRange :: (Word16, Word16),
-    _uDeciderSizeRange :: (Word16, Word16),
+    _uPredictorSizeRange :: (Word16, Word16),
     _uDevotionRange :: (UIDouble, UIDouble),
     _uMaturityRange :: (Word16, Word16),
     _uMaxAge :: Int,
     _uInitialPopulationSize :: Int,
     _uIdealPopulationSize :: Int,
     _uPopulationAllowedRange :: (Int, Int),
+    _uPopControl :: Bool,
+    _uEnergyToAddWain :: Double,
     _uAccuracyMargin :: UIDouble,
     _uAccuracyDeltaE :: Double,
     _uBaseMetabolismDeltaE :: Double,
-    _uEnergyCostPerByte :: Double,
+    _uEnergyCostPerClassifierModel :: Double,
     _uChildCostFactor :: Double,
     _uFlirtingFrequency :: UIDouble,
     _uPopControlDeltaE :: Persistent Double,
-    _uOutcomeRange :: (PM1Double, PM1Double),
+    _uClassifierThresholdRange :: (UIDouble,UIDouble),
     _uClassifierR0Range :: (UIDouble, UIDouble),
     _uClassifierDRange :: (UIDouble, UIDouble),
-    _uDeciderR0Range :: (UIDouble, UIDouble),
-    _uDeciderDRange :: (UIDouble, UIDouble),
+    _uPredictorThresholdRange :: (UIDouble, UIDouble),
+    _uPredictorR0Range :: (UIDouble, UIDouble),
+    _uPredictorDRange :: (UIDouble, UIDouble),
+    _uDefaultOutcomeRange :: (PM1Double, PM1Double),
+    _uDepthRange :: (Word8, Word8),
     _uCheckpoints :: [CP.Checkpoint],
     _uCurrVector :: Persistent [UIDouble],
     _uPrevVector :: Persistent [UIDouble],
@@ -165,11 +177,14 @@ cWorkingDir = requiredSetting "workingDir"
 cCacheSize :: Setting Int
 cCacheSize = requiredSetting "cacheSize"
 
-cShowDeciderModels :: Setting Bool
-cShowDeciderModels = requiredSetting "showDeciderModels"
+cShowPredictorModels :: Setting Bool
+cShowPredictorModels = requiredSetting "showPredictorModels"
 
 cShowPredictions :: Setting Bool
 cShowPredictions = requiredSetting "showPredictions"
+
+cGenFmris :: Setting Bool
+cGenFmris = requiredSetting "genFMRIs"
 
 cSleepBetweenTasks :: Setting Int
 cSleepBetweenTasks = requiredSetting "sleepTimeBetweenTasks"
@@ -181,10 +196,10 @@ cClassifierSizeRange :: Setting (Word16, Word16)
 cClassifierSizeRange
   = requiredSetting "classifierSizeRange"
 
-cDeciderSizeRange :: Setting (Word16, Word16)
-cDeciderSizeRange
-  = requiredSetting "deciderSizeRange"
-    
+cPredictorSizeRange :: Setting (Word16, Word16)
+cPredictorSizeRange
+  = requiredSetting "predictorSizeRange"
+
 cDevotionRange :: Setting (UIDouble, UIDouble)
 cDevotionRange
   = requiredSetting "devotionRange"
@@ -204,6 +219,12 @@ cIdealPopulationSize = requiredSetting "idealPopSize"
 cPopulationAllowedRange :: Setting (Double, Double)
 cPopulationAllowedRange = requiredSetting "popAllowedRange"
 
+cPopControl :: Setting Bool
+cPopControl = requiredSetting "popControl"
+
+cEnergyToAddWain :: Setting Double
+cEnergyToAddWain = requiredSetting "energyToAddWain"
+
 cAccuracyMargin :: Setting Double
 cAccuracyMargin = requiredSetting "accuracyMargin"
 
@@ -213,8 +234,8 @@ cAccuracyDeltaE = requiredSetting "accuracyDeltaE"
 cBaseMetabolismDeltaE :: Setting Double
 cBaseMetabolismDeltaE = requiredSetting "baseMetabDeltaE"
 
-cEnergyCostPerByte :: Setting Double
-cEnergyCostPerByte = requiredSetting "energyCostPerByte"
+cEnergyCostPerClassifierModel :: Setting Double
+cEnergyCostPerClassifierModel = requiredSetting "energyCostPerClassifierModel"
 
 cChildCostFactor :: Setting Double
 cChildCostFactor = requiredSetting "childCostFactor"
@@ -222,8 +243,8 @@ cChildCostFactor = requiredSetting "childCostFactor"
 cFlirtingFrequency :: Setting UIDouble
 cFlirtingFrequency = requiredSetting "flirtingFrequency"
 
-cOutcomeRange :: Setting (PM1Double, PM1Double)
-cOutcomeRange = requiredSetting "outcomeRange"
+cClassifierThresholdRange :: Setting (UIDouble, UIDouble)
+cClassifierThresholdRange = requiredSetting "classifierThresholdRange"
 
 cClassifierR0Range :: Setting (UIDouble, UIDouble)
 cClassifierR0Range = requiredSetting "classifierR0Range"
@@ -231,11 +252,20 @@ cClassifierR0Range = requiredSetting "classifierR0Range"
 cClassifierDRange :: Setting (UIDouble, UIDouble)
 cClassifierDRange = requiredSetting "classifierDecayRange"
 
-cDeciderR0Range :: Setting (UIDouble, UIDouble)
-cDeciderR0Range = requiredSetting "deciderR0Range"
+cPredictorThresholdRange :: Setting (UIDouble, UIDouble)
+cPredictorThresholdRange = requiredSetting "predictorThresholdRange"
 
-cDeciderDRange :: Setting (UIDouble, UIDouble)
-cDeciderDRange = requiredSetting "deciderDecayRange"
+cPredictorR0Range :: Setting (UIDouble, UIDouble)
+cPredictorR0Range = requiredSetting "predictorR0Range"
+
+cPredictorDRange :: Setting (UIDouble, UIDouble)
+cPredictorDRange = requiredSetting "predictorDecayRange"
+
+cDefaultOutcomeRange :: Setting (PM1Double, PM1Double)
+cDefaultOutcomeRange = requiredSetting "defaultOutcomeRange"
+
+cDepthRange :: Setting (Word8, Word8)
+cDepthRange = requiredSetting "depthRange"
 
 cCheckpoints :: Setting [CP.Checkpoint]
 cCheckpoints = requiredSetting "checkpoints"
@@ -264,31 +294,38 @@ config2Universe getSetting =
       _uChecklist = CL.mkPersistentChecklist (workDir ++ "/todo"),
       _uStatsFile = workDir ++ "/statsFile",
       _uRawStatsFile = workDir ++ "/rawStatsFile",
-      _uShowDeciderModels = getSetting cShowDeciderModels,
+      _uShowPredictorModels = getSetting cShowPredictorModels,
       _uShowPredictions = getSetting cShowPredictions,
+      _uGenFmris = getSetting cGenFmris,
       _uSleepBetweenTasks = getSetting cSleepBetweenTasks,
       _uVectorLength = n,
       _uClassifierSizeRange = getSetting cClassifierSizeRange,
-      _uDeciderSizeRange = getSetting cDeciderSizeRange,
+      _uPredictorSizeRange = getSetting cPredictorSizeRange,
       _uDevotionRange = getSetting cDevotionRange,
       _uMaturityRange = getSetting cMaturityRange,
       _uMaxAge = getSetting cMaxAge,
       _uInitialPopulationSize = p0,
       _uIdealPopulationSize = pIdeal,
       _uPopulationAllowedRange = (a', b'),
+      _uPopControl = getSetting cPopControl,
+      _uEnergyToAddWain = getSetting cEnergyToAddWain,
       _uAccuracyMargin = doubleToUI $ getSetting cAccuracyMargin,
       _uAccuracyDeltaE = getSetting cAccuracyDeltaE,
       _uBaseMetabolismDeltaE = getSetting cBaseMetabolismDeltaE,
-      _uEnergyCostPerByte = getSetting cEnergyCostPerByte,
+      _uEnergyCostPerClassifierModel
+        = getSetting cEnergyCostPerClassifierModel,
       _uChildCostFactor = getSetting cChildCostFactor,
       _uFlirtingFrequency = getSetting cFlirtingFrequency,
       _uPopControlDeltaE
         = mkPersistent 0 (workDir ++ "/popControlDeltaE"),
-      _uOutcomeRange = getSetting cOutcomeRange,
+      _uClassifierThresholdRange = getSetting cClassifierThresholdRange,
       _uClassifierR0Range = getSetting cClassifierR0Range,
       _uClassifierDRange = getSetting cClassifierDRange,
-      _uDeciderR0Range = getSetting cDeciderR0Range,
-      _uDeciderDRange = getSetting cDeciderDRange,
+      _uPredictorThresholdRange = getSetting cPredictorThresholdRange,
+      _uPredictorR0Range = getSetting cPredictorR0Range,
+      _uPredictorDRange = getSetting cPredictorDRange,
+      _uDefaultOutcomeRange = getSetting cDefaultOutcomeRange,
+      _uDepthRange = getSetting cDepthRange,
       _uCheckpoints = getSetting cCheckpoints,
       _uCurrVector = mkPersistent zeroes (workDir ++ "/currVector"),
       _uPrevVector = mkPersistent zeroes (workDir ++ "/prevVector"),

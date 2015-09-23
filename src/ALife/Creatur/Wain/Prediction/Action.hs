@@ -14,7 +14,8 @@
 module ALife.Creatur.Wain.Prediction.Action
   (
     Action(..),
-    predict
+    predict,
+    numActions
   ) where
 
 import ALife.Creatur.Genetics.BRGCWord8 (Genetic)
@@ -88,3 +89,6 @@ predict Up085 = uiApply (\x -> enforceRange unitInterval (x + 0.85))
 predict Up090 = uiApply (\x -> enforceRange unitInterval (x + 0.90))
 predict Up095 = uiApply (\x -> enforceRange unitInterval (x + 0.95))
 predict Up100 = uiApply (\x -> enforceRange unitInterval (x + 1))
+
+numActions :: Int
+numActions = 1 + fromEnum (maxBound :: Action)

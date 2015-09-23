@@ -13,7 +13,7 @@
 {-# LANGUAGE TypeFamilies #-}
 
 import ALife.Creatur (agentId)
-import ALife.Creatur.Wain.Prediction.Wain (PredictorWain,
+import ALife.Creatur.Wain.Prediction.Experiment (PredictorWain,
   randomPredictorWain, printStats)
 import ALife.Creatur.Wain (adjustEnergy)
 import ALife.Creatur.Wain.Pretty (pretty)
@@ -21,7 +21,7 @@ import ALife.Creatur.Wain.PersistentStatistics (clearStats)
 import ALife.Creatur.Wain.Statistics (Statistic, stats, summarise)
 import ALife.Creatur.Wain.Prediction.Universe (Universe(..),
   writeToLog, store, loadUniverse, uClassifierSizeRange,
-  uDeciderSizeRange, uInitialPopulationSize, uStatsFile)
+  uInitialPopulationSize, uStatsFile)
 import Control.Lens
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Random (evalRandIO)
@@ -34,14 +34,12 @@ introduceRandomAgent name = do
   u <- get
   classifierSize
     <- liftIO . evalRandIO . getRandomR . view uClassifierSizeRange $ u
-  deciderSize
-    <- liftIO . evalRandIO . getRandomR . view uDeciderSizeRange $ u
   agent
     <- liftIO . evalRandIO $
-        randomPredictorWain name u classifierSize deciderSize
+        randomPredictorWain name u classifierSize
   -- Make the first generation a little hungry so they start learning
   -- immediately.
-  let (agent', _, _) = adjustEnergy 0.8 agent
+  let (agent', _) = adjustEnergy 0.8 agent
   writeToLog $ "GeneratePopulation: Created " ++ agentId agent'
   writeToLog $ "GeneratePopulation: Stats " ++ pretty (stats agent')
   store agent'
