@@ -174,6 +174,8 @@ summaryStats r =
     Stats.dStat "other adult mating Δe" (view rOtherMatingDeltaE r),
     Stats.dStat "adult net Δe" (view rNetDeltaE r),
     Stats.dStat "child net Δe" (view rChildNetDeltaE r),
+    Stats.dStat "predicted value" (view rPredictedValue r),
+    Stats.dStat "actual value" (view rActualValue r),
     Stats.dStat "value pred. err" (view rValuePredictionErr r),
     Stats.dStat "reward pred err" (view rRewardPredictionErr r),
     Stats.iStat "bore" (view rBirthCount r),
