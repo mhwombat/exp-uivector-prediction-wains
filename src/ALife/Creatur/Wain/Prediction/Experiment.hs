@@ -240,7 +240,7 @@ finishRound = do
   cs <- use U.uCheckpoints
   enforceAll zs cs
   clearStats f
-  (a, b) <- use U.uPopulationAllowedRange
+  (a, b) <- use U.uAllowedPopulationRange
   checkPopSize (a, b)
 
 report :: String -> StateT Experiment IO ()
@@ -529,19 +529,22 @@ adjustPopControlDeltaE
   :: [Stats.Statistic] -> StateT (U.Universe PredictorWain) IO ()
 adjustPopControlDeltaE xs =
   unless (null xs) $ do
+    let (Just average) = Stats.lookup "avg. energy" xs
+    let (Just total) = Stats.lookup "total energy" xs
+    budget <- use U.uEnergyBudget
     pop <- U.popSize
-    U.writeToLog $ "pop=" ++ show pop
-    idealPop <- use U.uIdealPopulationSize
-    U.writeToLog $ "ideal pop=" ++ show idealPop
-    energyToAddWain <- use U.uEnergyToAddWain
-    U.writeToLog $ "energy to add one wain=" ++ show energyToAddWain
-    let c = idealPopControlDeltaE idealPop pop energyToAddWain
+    let c = idealPopControlDeltaE average total budget pop
+    U.writeToLog $ "Current avg. energy = " ++ show average
+    U.writeToLog $ "Current total energy = " ++ show total
+    U.writeToLog $ "energy budget = " ++ show budget
     U.writeToLog $ "Adjusted pop. control Δe = " ++ show c
     zoom U.uPopControlDeltaE $ putPS c
 
-idealPopControlDeltaE :: Int -> Int -> Double -> Double
-idealPopControlDeltaE idealPop pop energyToAddWain
-  = energyToAddWain*fromIntegral (idealPop - pop) / fromIntegral pop
+-- TODO: Make the 0.8 configurable
+idealPopControlDeltaE :: Double -> Double -> Double -> Int -> Double
+idealPopControlDeltaE average total budget pop
+  | average < 0.8 = (budget - total) / (fromIntegral pop)
+  | otherwise     = 0.8 - average
 
 totalEnergy :: StateT Experiment IO (Double, Double)
 totalEnergy = do

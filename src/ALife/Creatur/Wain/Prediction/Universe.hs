@@ -42,10 +42,9 @@ module ALife.Creatur.Wain.Prediction.Universe
     uMaturityRange,
     uMaxAge,
     uInitialPopulationSize,
-    uIdealPopulationSize,
-    uPopulationAllowedRange,
+    uEnergyBudget,
+    uAllowedPopulationRange,
     uPopControl,
-    uEnergyToAddWain,
     uAccuracyMargin,
     uAccuracyDeltaE,
     uBaseMetabolismDeltaE,
@@ -119,10 +118,9 @@ data Universe a = Universe
     _uMaturityRange :: (Word16, Word16),
     _uMaxAge :: Int,
     _uInitialPopulationSize :: Int,
-    _uIdealPopulationSize :: Int,
-    _uPopulationAllowedRange :: (Int, Int),
+    _uEnergyBudget :: Double,
+    _uAllowedPopulationRange :: (Int, Int),
     _uPopControl :: Bool,
-    _uEnergyToAddWain :: Double,
     _uAccuracyMargin :: UIDouble,
     _uAccuracyDeltaE :: Double,
     _uBaseMetabolismDeltaE :: Double,
@@ -130,7 +128,7 @@ data Universe a = Universe
     _uChildCostFactor :: Double,
     _uFlirtingFrequency :: UIDouble,
     _uPopControlDeltaE :: Persistent Double,
-    _uClassifierThresholdRange :: (UIDouble,UIDouble),
+    _uClassifierThresholdRange :: (UIDouble, UIDouble),
     _uClassifierR0Range :: (UIDouble, UIDouble),
     _uClassifierDRange :: (UIDouble, UIDouble),
     _uPredictorThresholdRange :: (UIDouble, UIDouble),
@@ -201,8 +199,7 @@ cPredictorSizeRange
   = requiredSetting "predictorSizeRange"
 
 cDevotionRange :: Setting (UIDouble, UIDouble)
-cDevotionRange
-  = requiredSetting "devotionRange"
+cDevotionRange = requiredSetting "devotionRange"
 
 cMaturityRange :: Setting (Word16, Word16)
 cMaturityRange = requiredSetting "maturityRange"
@@ -213,17 +210,11 @@ cMaxAge = requiredSetting "maxAge"
 cInitialPopulationSize :: Setting Int
 cInitialPopulationSize = requiredSetting "initialPopSize"
 
-cIdealPopulationSize :: Setting Double
-cIdealPopulationSize = requiredSetting "idealPopSize"
-
-cPopulationAllowedRange :: Setting (Double, Double)
-cPopulationAllowedRange = requiredSetting "popAllowedRange"
+cAllowedPopulationRange :: Setting (Double, Double)
+cAllowedPopulationRange = requiredSetting "allowedPopRange"
 
 cPopControl :: Setting Bool
 cPopControl = requiredSetting "popControl"
-
-cEnergyToAddWain :: Setting Double
-cEnergyToAddWain = requiredSetting "energyToAddWain"
 
 cAccuracyMargin :: Setting Double
 cAccuracyMargin = requiredSetting "accuracyMargin"
@@ -235,7 +226,8 @@ cBaseMetabolismDeltaE :: Setting Double
 cBaseMetabolismDeltaE = requiredSetting "baseMetabDeltaE"
 
 cEnergyCostPerClassifierModel :: Setting Double
-cEnergyCostPerClassifierModel = requiredSetting "energyCostPerClassifierModel"
+cEnergyCostPerClassifierModel
+  = requiredSetting "energyCostPerClassifierModel"
 
 cChildCostFactor :: Setting Double
 cChildCostFactor = requiredSetting "childCostFactor"
@@ -275,10 +267,10 @@ loadUniverse = do
   configFile <- Path <$> makeRelativeToCurrentDirectory "prediction.config"
   readResult <- try $ readSettings configFile
   case readResult of
-    Right (_, GetSetting getSetting) -> return $
-            config2Universe getSetting
-    Left (x :: SomeException) -> error $
-            "Error reading the config file: " ++ show x
+    Right (_, GetSetting getSetting) ->
+      return $ config2Universe getSetting
+    Left (x :: SomeException) ->
+      error $ "Error reading the config file: " ++ show x
 
 config2Universe :: (forall a. Read a => Setting a -> a) -> Universe b
 config2Universe getSetting =
@@ -287,9 +279,8 @@ config2Universe getSetting =
       _uExperimentName = en,
       _uClock = K.mkPersistentCounter (workDir ++ "/clock"),
       _uLogger = SL.mkSimpleLogger (workDir ++ "/log/" ++ en ++ ".log"),
-      _uDB
-        = CFS.mkCachedFSDatabase (workDir ++ "/db")
-          (getSetting cCacheSize),
+      _uDB = CFS.mkCachedFSDatabase (workDir ++ "/db")
+               (getSetting cCacheSize),
       _uNamer = N.mkSimpleNamer (en ++ "_") (workDir ++ "/namer"),
       _uChecklist = CL.mkPersistentChecklist (workDir ++ "/todo"),
       _uStatsFile = workDir ++ "/statsFile",
@@ -305,10 +296,9 @@ config2Universe getSetting =
       _uMaturityRange = getSetting cMaturityRange,
       _uMaxAge = getSetting cMaxAge,
       _uInitialPopulationSize = p0,
-      _uIdealPopulationSize = pIdeal,
-      _uPopulationAllowedRange = (a', b'),
+      _uEnergyBudget = fromIntegral p0 * 0.5,
+      _uAllowedPopulationRange = (a', b'),
       _uPopControl = getSetting cPopControl,
-      _uEnergyToAddWain = getSetting cEnergyToAddWain,
       _uAccuracyMargin = doubleToUI $ getSetting cAccuracyMargin,
       _uAccuracyDeltaE = getSetting cAccuracyDeltaE,
       _uBaseMetabolismDeltaE = getSetting cBaseMetabolismDeltaE,
@@ -337,10 +327,8 @@ config2Universe getSetting =
   where en = getSetting cExperimentName
         workDir = getSetting cWorkingDir
         p0 = getSetting cInitialPopulationSize
-        fIdeal = getSetting cIdealPopulationSize
-        pIdeal = round (fromIntegral p0 * fIdeal)
-        (a, b) = getSetting cPopulationAllowedRange
-        a' = round (fromIntegral pIdeal * a)
-        b' = round (fromIntegral pIdeal * b)
+        (a, b) = getSetting cAllowedPopulationRange
+        a' = round (fromIntegral p0 * a)
+        b' = round (fromIntegral p0 * b)
         n = getSetting cVectorLength
         zeroes = replicate n 0
