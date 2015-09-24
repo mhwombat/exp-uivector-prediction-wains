@@ -117,15 +117,15 @@ data Summary = Summary
     _rPredDeltaE :: Double,
     _rMetabolismDeltaE :: Double,
     _rPopControlDeltaE :: Double,
-    _rFlirtingDeltaE :: Double,
     _rMatingDeltaE :: Double,
     _rOldAgeDeltaE :: Double,
     _rOtherMatingDeltaE :: Double,
     _rNetDeltaE :: Double,
     _rChildNetDeltaE :: Double,
+    _rPredictedValue :: UIDouble,
+    _rActualValue :: UIDouble,
     _rValuePredictionErr :: Double,
     _rRewardPredictionErr :: Double,
-    _rErr :: Double,
     _rBirthCount :: Int,
     _rWeanCount :: Int,
     _rFlirtCount :: Int,
@@ -143,15 +143,15 @@ initSummary p = Summary
     _rPredDeltaE = 0,
     _rMetabolismDeltaE = 0,
     _rPopControlDeltaE = 0,
-    _rFlirtingDeltaE = 0,
     _rMatingDeltaE = 0,
     _rOldAgeDeltaE = 0,
     _rOtherMatingDeltaE = 0,
     _rNetDeltaE = 0,
     _rChildNetDeltaE = 0,
+    _rPredictedValue = 0,
+    _rActualValue = 0,
     _rValuePredictionErr = 0,
     _rRewardPredictionErr = 0,
-    _rErr = 0,
     _rBirthCount = 0,
     _rWeanCount = 0,
     _rFlirtCount = 0,
@@ -169,15 +169,13 @@ summaryStats r =
     Stats.dStat "adult prediction Δe" (view rPredDeltaE r),
     Stats.dStat "adult metabolism Δe" (view rMetabolismDeltaE r),
     Stats.dStat "adult pop. control Δe" (view rPopControlDeltaE r),
-    Stats.dStat "adult flirting Δe" (view rFlirtingDeltaE r),
     Stats.dStat "adult mating Δe" (view rMatingDeltaE r),
     Stats.dStat "adult old age Δe" (view rOldAgeDeltaE r),
     Stats.dStat "other adult mating Δe" (view rOtherMatingDeltaE r),
     Stats.dStat "adult net Δe" (view rNetDeltaE r),
     Stats.dStat "child net Δe" (view rChildNetDeltaE r),
-    Stats.dStat "err" (view rErr r),
     Stats.dStat "value pred. err" (view rValuePredictionErr r),
-    Stats.dStat "reward pred. err" (view rRewardPredictionErr r),
+    Stats.dStat "reward pred err" (view rRewardPredictionErr r),
     Stats.iStat "bore" (view rBirthCount r),
     Stats.iStat "weaned" (view rWeanCount r),
     Stats.iStat "flirted" (view rFlirtCount r),
@@ -226,7 +224,7 @@ startRound = do
             (uiToDouble actual - uiToDouble margin)
   let b = doubleToUI . enforceRange unitInterval $
             (uiToDouble actual + uiToDouble margin)
-  zoom U.uCurrentAccuracyRange $ putPS (a,b)
+  zoom U.uCurrentAccuracyRange $ putPS (a, b)
   U.writeToLog $ "margins=" ++ show (a, b)
 
 finishRound :: StateT (U.Universe PredictorWain) IO ()
@@ -305,7 +303,6 @@ fillInSummary s = s
     _rNetDeltaE = _rPredDeltaE s
          + _rMetabolismDeltaE s
          + _rPopControlDeltaE s
-         + _rFlirtingDeltaE s
          + _rMatingDeltaE s
          + _rOldAgeDeltaE s
          + _rOtherMatingDeltaE s,
@@ -367,9 +364,12 @@ rewardPrediction = do
         agentId a ++ " predicted " ++ show predicted
         ++ ", actual value was " ++ show actual
         ++ ", reward is " ++ show deltaE
-      let err = abs $
-                  uiToDouble actual - uiToDouble predicted
-      zoom universe . U.writeToLog $ "DEBUG 20 err=" ++ show err
+      assign (summary . rPredictedValue) predicted
+      zoom universe . U.writeToLog $ "DEBUG 20a"
+      assign (summary . rActualValue) actual
+      zoom universe . U.writeToLog $ "DEBUG 20b"
+      let err = abs $ uiToDouble actual - uiToDouble predicted
+      zoom universe . U.writeToLog $ "DEBUG 20c err=" ++ show err
       assign (summary . rValuePredictionErr) err
       zoom universe . U.writeToLog $ "DEBUG 21"
       a' <- use subject
@@ -579,7 +579,7 @@ letSubjectReflect wBefore r = do
   p <- zoom (universe . U.uPrevVector) getPS
   let (w', err) = W.reflect [p] r wBefore w
   assign subject w'
-  assign (summary . rErr) err
+  assign (summary . rRewardPredictionErr) err
 
 writeRawStats
   :: String -> FilePath -> [Stats.Statistic]
