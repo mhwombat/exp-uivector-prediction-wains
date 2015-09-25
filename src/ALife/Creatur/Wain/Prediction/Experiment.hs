@@ -365,13 +365,13 @@ rewardPrediction = do
       range <- zoom (universe . U.uCurrentAccuracyRange) getPS
       accuracyDeltaE <- use (universe . U.uAccuracyDeltaE)
       let deltaE = if inRange range predicted then accuracyDeltaE else 0
+      adjustWainEnergy subject deltaE rPredDeltaE "prediction"
       actual <- head <$> zoom (universe . U.uCurrVector) getPS
       zoom universe . U.writeToLog $
         agentId a ++ " predicted " ++ show predicted
         ++ ", actual value was " ++ show actual
         ++ ", reward is " ++ show deltaE
       when (deltaE > 0) $ assign (summary . rRewardCount) 1
-      assign (summary . rPredDeltaE) deltaE
       assign (summary . rPredictedValue) predicted
       zoom universe . U.writeToLog $ "DEBUG 20a"
       assign (summary . rActualValue) actual
