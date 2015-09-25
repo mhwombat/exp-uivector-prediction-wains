@@ -371,6 +371,7 @@ rewardPrediction = do
         ++ ", actual value was " ++ show actual
         ++ ", reward is " ++ show deltaE
       when (deltaE > 0) $ assign (summary . rRewardCount) 1
+      assign (summary . rPredDeltaE) deltaE
       assign (summary . rPredictedValue) predicted
       zoom universe . U.writeToLog $ "DEBUG 20a"
       assign (summary . rActualValue) actual
