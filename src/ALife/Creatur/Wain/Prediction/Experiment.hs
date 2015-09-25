@@ -100,7 +100,8 @@ randomPredictorWain wName u classifierSize = do
   dOut <- take 3 <$> getRandomRs (view U.uDefaultOutcomeRange u)
   dp <- getRandomR $ view U.uDepthRange u
   let mr = makeMuser dOut dp
-  let wBrain = makeBrain c mr dr hw
+  t <- getRandom
+  let wBrain = makeBrain c mr dr hw t
   wDevotion <- getRandomR . view U.uDevotionRange $ u
   wAgeOfMaturity <- getRandomR . view U.uMaturityRange $ u
   let wPassionDelta = 0
