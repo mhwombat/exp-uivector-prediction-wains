@@ -25,10 +25,11 @@ module ALife.Creatur.Wain.Prediction.Experiment
     finishRound,
     schemaQuality,
     printStats,
+    versionInfo,
     idealPopControlDeltaE -- exported for testing only
   ) where
 
-import ALife.Creatur (agentId, isAlive)
+import ALife.Creatur (agentId, isAlive, programVersion)
 import ALife.Creatur.Persistent (getPS, putPS)
 import ALife.Creatur.Task (checkPopSize)
 import qualified ALife.Creatur.Wain as W
@@ -46,7 +47,7 @@ import ALife.Creatur.Wain.PersistentStatistics (updateStats, readStats,
   clearStats)
 import ALife.Creatur.Wain.Prediction.Action (Action(..), predict,
   numActions)
-import ALife.Creatur.Wain.Prediction.DataGen (nextVector)
+import ALife.Creatur.Wain.Prediction.DataSource (nextVector)
 import ALife.Creatur.Wain.Prediction.VectorTweaker (VectorTweaker(..))
 import qualified ALife.Creatur.Wain.Prediction.Universe as U
 import ALife.Creatur.Wain.Pretty (pretty)
@@ -68,10 +69,18 @@ import Control.Monad.State.Lazy (StateT, execStateT, get, put)
 import Data.List (intercalate, minimumBy)
 import Data.Map (toList)
 import Data.Ord (comparing)
+import Data.Version (showVersion)
 import Data.Word (Word16)
+import Paths_exp_prediction_wains (version)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath (dropFileName)
 import Text.Printf (printf)
+
+versionInfo :: String
+versionInfo
+  = "exp-prediction-wains-" ++ showVersion version
+      ++ ", compiled with " ++ W.packageVersion
+      ++ ", " ++ ALife.Creatur.programVersion
 
 type PredictorWain = W.Wain [UIDouble] VectorTweaker  Action
 
@@ -97,11 +106,12 @@ randomPredictorWain wName u classifierSize = do
   let predictorSize = classifierSize * fromIntegral numActions
   let dr = P.buildPredictor fd predictorSize predictorThreshold
   hw <- (makeWeights . take 3) <$> getRandomRs unitInterval
-  dOut <- take 3 <$> getRandomRs (view U.uDefaultOutcomeRange u)
+  dOut <- take 4 <$> getRandomRs (view U.uDefaultOutcomeRange u)
   dp <- getRandomR $ view U.uDepthRange u
   let mr = makeMuser dOut dp
   t <- getRandom
-  let wBrain = makeBrain c mr dr hw t
+  ios <- take 4 <$> getRandomRs (view U.uImprintOutcomeRange u)
+  let wBrain = makeBrain c mr dr hw t ios
   wDevotion <- getRandomR . view U.uDevotionRange $ u
   wAgeOfMaturity <- getRandomR . view U.uMaturityRange $ u
   let wPassionDelta = 0
@@ -207,7 +217,7 @@ startRound = do
   U.writeToLog $ "DEBUG 1"
   xsOld <- zoom U.uCurrVector getPS
   U.writeToLog $ "DEBUG 2"
-  xs <- nextVector
+  xs <- zoom U.uDataSource nextVector
   U.writeToLog $ "DEBUG 3"
   let deltas = zipWith scaledDelta xs xsOld
     -- xs is shorter because it doesn't include any deltas, so the

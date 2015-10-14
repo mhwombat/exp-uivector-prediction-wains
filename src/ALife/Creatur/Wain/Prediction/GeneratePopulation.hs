@@ -60,4 +60,3 @@ main = do
   let ns = map (("Founder" ++) . show) [1..(view uInitialPopulationSize u)]
   print ns
   evalStateT (introduceRandomAgents ns) u
-  

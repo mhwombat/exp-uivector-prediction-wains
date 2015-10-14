@@ -10,7 +10,7 @@
 -- Tool to generate data for wain demos.
 --
 ------------------------------------------------------------------------
-module ALife.Creatur.Wain.Prediction.DataGen where
+module Main where
 
 import qualified ALife.Creatur as A
 import qualified ALife.Creatur.Database as D
@@ -19,10 +19,13 @@ import ALife.Creatur.Wain.UnitInterval (UIDouble, doubleToUI,
   forceDoubleToUI)
 import qualified ALife.Creatur.Wain.Prediction.Universe as U
 import Control.Lens
+import Control.Monad (foldM_)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Random (Rand, RandomGen, evalRandIO, getRandom,
   getRandomR, getRandomRs)
 import Control.Monad.State.Lazy (StateT)
+import Data.List (intersperse)
+import System.Environment (getArgs)
 
 -- We want four records per hour, so that's 360 records in a day.
 recordNumToRadians :: Int -> Double
@@ -109,3 +112,15 @@ nextVector' "Prediction60" _ vOld = do
 
 nextVector' _ _ _ = error "No such experiment"
 -- add more randomness
+
+writeVector :: String -> [UIDouble] -> Double -> IO [UIDouble]
+writeVector experiment prevVector time = do
+  xs <- evalRandIO $ nextVector' experiment time prevVector
+  putStrLn . concat . intersperse "," . map show $ xs
+  return xs
+
+main :: IO ()
+main = do
+  experimentName <- head <$> getArgs
+  let ts = map recordNumToRadians [1..360]
+  foldM_ (writeVector experimentName) (repeat 0) ts

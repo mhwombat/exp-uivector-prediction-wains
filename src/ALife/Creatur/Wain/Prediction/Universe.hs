@@ -31,6 +31,7 @@ module ALife.Creatur.Wain.Prediction.Universe
     uChecklist,
     uStatsFile,
     uRawStatsFile,
+    uDataSource,
     uShowPredictorModels,
     uShowPredictions,
     uGenFmris,
@@ -59,6 +60,7 @@ module ALife.Creatur.Wain.Prediction.Universe
     uPredictorR0Range,
     uPredictorDRange,
     uDefaultOutcomeRange,
+    uImprintOutcomeRange,
     uDepthRange,
     uCheckpoints,
     uCurrVector,
@@ -87,6 +89,8 @@ import ALife.Creatur.Persistent (Persistent, mkPersistent)
 import qualified ALife.Creatur.Universe as U
 import qualified ALife.Creatur.Wain.Checkpoint as CP
 import ALife.Creatur.Wain.Prediction.Action (Action)
+import ALife.Creatur.Wain.Prediction.DataSource (DataSource,
+  mkDataSource)
 import ALife.Creatur.Wain.Response (Response)
 import ALife.Creatur.Wain.PlusMinusOne (PM1Double)
 import ALife.Creatur.Wain.UnitInterval (UIDouble, doubleToUI)
@@ -107,6 +111,7 @@ data Universe a = Universe
     _uChecklist :: CL.PersistentChecklist,
     _uStatsFile :: FilePath,
     _uRawStatsFile :: FilePath,
+    _uDataSource :: DataSource,
     _uShowPredictorModels :: Bool,
     _uShowPredictions :: Bool,
     _uGenFmris :: Bool,
@@ -135,6 +140,7 @@ data Universe a = Universe
     _uPredictorR0Range :: (UIDouble, UIDouble),
     _uPredictorDRange :: (UIDouble, UIDouble),
     _uDefaultOutcomeRange :: (PM1Double, PM1Double),
+    _uImprintOutcomeRange :: (PM1Double, PM1Double),
     _uDepthRange :: (Word8, Word8),
     _uCheckpoints :: [CP.Checkpoint],
     _uCurrVector :: Persistent [UIDouble],
@@ -171,6 +177,9 @@ cExperimentName = requiredSetting "experimentName"
 
 cWorkingDir :: Setting FilePath
 cWorkingDir = requiredSetting "workingDir"
+
+cDataFile :: Setting FilePath
+cDataFile = requiredSetting "dataFile"
 
 cCacheSize :: Setting Int
 cCacheSize = requiredSetting "cacheSize"
@@ -256,6 +265,9 @@ cPredictorDRange = requiredSetting "predictorDecayRange"
 cDefaultOutcomeRange :: Setting (PM1Double, PM1Double)
 cDefaultOutcomeRange = requiredSetting "defaultOutcomeRange"
 
+cImprintOutcomeRange :: Setting (PM1Double, PM1Double)
+cImprintOutcomeRange = requiredSetting "imprintOutcomeRange"
+
 cDepthRange :: Setting (Word8, Word8)
 cDepthRange = requiredSetting "depthRange"
 
@@ -285,6 +297,7 @@ config2Universe getSetting =
       _uChecklist = CL.mkPersistentChecklist (workDir ++ "/todo"),
       _uStatsFile = workDir ++ "/statsFile",
       _uRawStatsFile = workDir ++ "/rawStatsFile",
+      _uDataSource = mkDataSource dataFile readCounterFile,
       _uShowPredictorModels = getSetting cShowPredictorModels,
       _uShowPredictions = getSetting cShowPredictions,
       _uGenFmris = getSetting cGenFmris,
@@ -315,6 +328,7 @@ config2Universe getSetting =
       _uPredictorR0Range = getSetting cPredictorR0Range,
       _uPredictorDRange = getSetting cPredictorDRange,
       _uDefaultOutcomeRange = getSetting cDefaultOutcomeRange,
+      _uImprintOutcomeRange = getSetting cImprintOutcomeRange,
       _uDepthRange = getSetting cDepthRange,
       _uCheckpoints = getSetting cCheckpoints,
       _uCurrVector = mkPersistent zeroes (workDir ++ "/currVector"),
@@ -332,3 +346,5 @@ config2Universe getSetting =
         b' = round (fromIntegral p0 * b)
         n = getSetting cVectorLength
         zeroes = replicate n 0
+        dataFile = getSetting cDataFile
+        readCounterFile = workDir ++ "/readCounter"
