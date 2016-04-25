@@ -54,6 +54,7 @@ import ALife.Creatur.Wain.Raw (raw)
 import ALife.Creatur.Wain.Response (Response, action, outcomes)
 import qualified ALife.Creatur.Wain.Statistics as Stats
 import ALife.Creatur.Wain.Statistics (summarise)
+import qualified ALife.Creatur.Wain.UIVector.Wain as UW
 import ALife.Creatur.Wain.UnitInterval (UIDouble, uiToDouble,
   doubleToUI)
 import ALife.Creatur.Wain.Util (unitInterval, enforceRange, inRange)
@@ -78,6 +79,7 @@ import Text.Printf (printf)
 versionInfo :: String
 versionInfo
   = "exp-prediction-wains-" ++ showVersion version
+      ++ ", compiled with " ++ UW.packageVersion
       ++ ", compiled with " ++ W.packageVersion
       ++ ", " ++ ALife.Creatur.programVersion
 
