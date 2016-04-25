@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------
 -- |
--- Module      :  ALife.Creatur.Wain.Prediction.DataSource
+-- Module      :  ALife.Creatur.Wain.UIVector.Prediction.DataSource
 -- Copyright   :  (c) Amy de Buitléir 2015
 -- License     :  BSD-style
 -- Maintainer  :  amy@nualeargais.ie
@@ -10,7 +10,7 @@
 -- Reader of data files.
 --
 ------------------------------------------------------------------------
-module ALife.Creatur.Wain.Prediction.DataSource where
+module ALife.Creatur.Wain.UIVector.Prediction.DataSource where
 
 import ALife.Creatur.Persistent (Persistent, mkPersistent, getPS, putPS)
 import ALife.Creatur.Util (modifyLift, stateMap)

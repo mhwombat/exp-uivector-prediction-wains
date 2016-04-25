@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------
 -- |
--- Module      :  ALife.Creatur.Wain.Prediction.DataGen
+-- Module      :  ALife.Creatur.Wain.UIVector.Prediction.DataGen
 -- Copyright   :  (c) Amy de Buitléir 2015
 -- License     :  BSD-style
 -- Maintainer  :  amy@nualeargais.ie
@@ -17,7 +17,7 @@ import qualified ALife.Creatur.Database as D
 import ALife.Creatur.Persistent (getPS)
 import ALife.Creatur.Wain.UnitInterval (UIDouble, doubleToUI,
   forceDoubleToUI)
-import qualified ALife.Creatur.Wain.Prediction.Universe as U
+import qualified ALife.Creatur.Wain.UIVector.Prediction.Universe as U
 import Control.Lens
 import Control.Monad (foldM_)
 import Control.Monad.IO.Class (liftIO)

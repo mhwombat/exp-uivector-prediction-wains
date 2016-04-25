@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------
 -- |
--- Module      :  ALife.Creatur.Wain.Prediction.Daemon
+-- Module      :  ALife.Creatur.Wain.UIVector.Prediction.Daemon
 -- Copyright   :  (c) Amy de Buitléir 2013-2015
 -- License     :  BSD-style
 -- Maintainer  :  amy@nualeargais.ie
@@ -14,21 +14,17 @@
 {-# LANGUAGE FlexibleContexts #-}
 module Main where
 
-import ALife.Creatur (programVersion)
 import ALife.Creatur.Daemon (CreaturDaemon(..), Job(..),
   simpleDaemon, launch)
 import ALife.Creatur.Task (runInteractingAgents, simpleJob)
-import ALife.Creatur.Wain (programVersion)
-import ALife.Creatur.Wain.Prediction.Wain (PredictorWain, run, 
-  startRound, finishRound)
-import ALife.Creatur.Wain.Prediction.Universe (Universe(..),
+import ALife.Creatur.Wain.UIVector.Prediction.Experiment (PatternWain, run, 
+  startRound, finishRound, versionInfo)
+import ALife.Creatur.Wain.UIVector.Prediction.Universe (Universe(..),
   writeToLog, loadUniverse, uSleepBetweenTasks, uExperimentName)
 import Control.Concurrent (MVar, newMVar, readMVar, swapMVar)
 import Control.Lens
 import Control.Monad (unless)
 import Control.Monad.State (execStateT)
-import Data.Version (showVersion)
-import Paths_creatur_wains_prediction (version)
 import System.IO.Unsafe (unsafePerformIO)
 import System.Posix.Daemonize (CreateDaemon(name))
 
@@ -36,11 +32,11 @@ shutdownMessagePrinted :: MVar Bool
 {-# NOINLINE shutdownMessagePrinted #-}
 shutdownMessagePrinted = unsafePerformIO (newMVar False)
 
-startupHandler :: String -> Universe PredictorWain -> IO (Universe PredictorWain)
+startupHandler :: String -> Universe PatternWain -> IO (Universe PatternWain)
 startupHandler programName
   = execStateT (writeToLog $ "Starting " ++ programName)
 
-shutdownHandler :: String -> Universe PredictorWain -> IO ()
+shutdownHandler :: String -> Universe PatternWain -> IO ()
 shutdownHandler programName u = do
   -- Only print the message once
   handled <- readMVar shutdownMessagePrinted
@@ -53,11 +49,8 @@ shutdownHandler programName u = do
 main :: IO ()
 main = do
   u <- loadUniverse
-  let program = run u
-  let message = "creatur-wains-prediction-" ++ showVersion version
-          ++ ", compiled with " ++ ALife.Creatur.Wain.programVersion
-          ++ ", " ++ ALife.Creatur.programVersion
-          ++ ", configuration=" ++ show u
+  let program = run
+  let message = versionInfo ++ ", configuration=" ++ show u
   let j = simpleJob
         { task=runInteractingAgents program startRound finishRound,
           onStartup=startupHandler message,

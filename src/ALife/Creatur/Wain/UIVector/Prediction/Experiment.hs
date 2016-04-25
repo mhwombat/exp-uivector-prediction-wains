@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------
 -- |
--- Module      :  ALife.Creatur.Wain.Prediction.Experiment
+-- Module      :  ALife.Creatur.Wain.UIVector.Prediction.Experiment
 -- Copyright   :  (c) Amy de Buitléir 2012-2015
 -- License     :  BSD-style
 -- Maintainer  :  amy@nualeargais.ie
@@ -15,11 +15,10 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE Rank2Types #-}
-module ALife.Creatur.Wain.Prediction.Experiment
+module ALife.Creatur.Wain.UIVector.Prediction.Experiment
   (
-    PredictorWain,
-    randomPredictorWain,
-    VectorTweaker(..),
+    PatternWain,
+    randomPatternWain,
     run,
     startRound,
     finishRound,
@@ -39,17 +38,17 @@ import ALife.Creatur.Wain.Checkpoint (enforceAll)
 import qualified ALife.Creatur.Wain.Classifier as Cl
 import ALife.Creatur.Wain.Muser (makeMuser)
 import qualified ALife.Creatur.Wain.Predictor as P
-import ALife.Creatur.Wain.GeneticSOM (RandomExponentialParams(..),
-  randomExponential, schemaQuality, modelMap, currentLearningRate,
+import ALife.Creatur.Wain.GeneticSOM (RandomLearningParams(..),
+  randomLearningFunction, schemaQuality, modelMap, currentLearningRate,
   numModels)
 import ALife.Creatur.Wain.PlusMinusOne (PM1Double, pm1ToDouble)
 import ALife.Creatur.Wain.PersistentStatistics (updateStats, readStats,
   clearStats)
-import ALife.Creatur.Wain.Prediction.Action (Action(..), predict,
+import ALife.Creatur.Wain.UIVector.Prediction.Action (Action(..), predict,
   numActions)
-import ALife.Creatur.Wain.Prediction.DataSource (nextVector)
-import ALife.Creatur.Wain.Prediction.VectorTweaker (VectorTweaker(..))
-import qualified ALife.Creatur.Wain.Prediction.Universe as U
+import ALife.Creatur.Wain.UIVector.Prediction.DataSource (nextVector)
+import ALife.Creatur.Wain.UIVector.Tweaker (PatternTweaker(..))
+import qualified ALife.Creatur.Wain.UIVector.Prediction.Universe as U
 import ALife.Creatur.Wain.Pretty (pretty)
 import ALife.Creatur.Wain.Raw (raw)
 import ALife.Creatur.Wain.Response (Response, action, outcomes)
@@ -70,8 +69,8 @@ import Data.List (intercalate, minimumBy)
 import Data.Map (toList)
 import Data.Ord (comparing)
 import Data.Version (showVersion)
-import Data.Word (Word16)
-import Paths_exp_prediction_wains (version)
+import Data.Word (Word64)
+import Paths_exp_uivector_prediction_wains (version)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath (dropFileName)
 import Text.Printf (printf)
@@ -82,26 +81,28 @@ versionInfo
       ++ ", compiled with " ++ W.packageVersion
       ++ ", " ++ ALife.Creatur.programVersion
 
-type PredictorWain = W.Wain [UIDouble] VectorTweaker  Action
+type PatternWain = W.Wain [UIDouble] PatternTweaker  Action
 
-randomPredictorWain
+randomPatternWain
   :: RandomGen r
-    => String -> U.Universe PredictorWain -> Word16
-      -> Rand r PredictorWain
-randomPredictorWain wName u classifierSize = do
+    => String -> U.Universe PatternWain -> Word64
+      -> Rand r PatternWain
+randomPatternWain wName u classifierSize = do
   let k = view U.uVectorLength u
-  let fcp = RandomExponentialParams
-               { _r0Range = view U.uClassifierR0Range u,
-                 _dRange = view U.uClassifierDRange u }
-  fc <- randomExponential fcp
+  let fcp = RandomLearningParams
+              { _r0Range = view U.uPredictorR0Range u,
+                _rfRange = view U.uPredictorRfRange u,
+                _tfRange = view U.uPredictorTfRange u }
+  fc <- randomLearningFunction fcp
   classifierThreshold <- getRandomR (view U.uClassifierThresholdRange u)
   ws <- (makeWeights . take k) <$> getRandoms
   let c = Cl.buildClassifier fc classifierSize classifierThreshold
-            (VectorTweaker ws)
-  let fdp = RandomExponentialParams
+            (PatternTweaker ws)
+  let fdp = RandomLearningParams
               { _r0Range = view U.uPredictorR0Range u,
-                _dRange = view U.uPredictorDRange u }
-  fd <- randomExponential fdp
+                _rfRange = view U.uPredictorRfRange u,
+                _tfRange = view U.uPredictorTfRange u }
+  fd <- randomLearningFunction fdp
   predictorThreshold <- getRandomR (view U.uPredictorThresholdRange u)
   let predictorSize = classifierSize * fromIntegral numActions
   let dr = P.buildPredictor fd predictorSize predictorThreshold
@@ -111,7 +112,8 @@ randomPredictorWain wName u classifierSize = do
   let mr = makeMuser dOut dp
   t <- getRandom
   ios <- take 4 <$> getRandomRs (view U.uImprintOutcomeRange u)
-  let wBrain = makeBrain c mr dr hw t ios
+  rds <- take 4 <$> getRandomRs (view U.uReinforcementDeltasRange u)
+  let (Right wBrain) = makeBrain c mr dr hw t ios rds
   wDevotion <- getRandomR . view U.uDevotionRange $ u
   wAgeOfMaturity <- getRandomR . view U.uMaturityRange $ u
   let wPassionDelta = 0
@@ -201,10 +203,10 @@ summaryStats r =
 
 data Experiment = Experiment
   {
-    _subject :: PredictorWain,
-    _other :: PredictorWain,
-    _weanlings :: [PredictorWain],
-    _universe :: U.Universe PredictorWain,
+    _subject :: PatternWain,
+    _other :: PatternWain,
+    _weanlings :: [PatternWain],
+    _universe :: U.Universe PatternWain,
     _summary :: Summary
   }
 makeLenses ''Experiment
@@ -212,7 +214,7 @@ makeLenses ''Experiment
 scaledDelta :: UIDouble -> UIDouble -> UIDouble
 scaledDelta x y = doubleToUI $ (uiToDouble x - uiToDouble y)/2 + 0.5
 
-startRound :: StateT (U.Universe PredictorWain) IO ()
+startRound :: StateT (U.Universe PatternWain) IO ()
 startRound = do
   U.writeToLog $ "DEBUG 1"
   xsOld <- zoom U.uCurrVector getPS
@@ -243,7 +245,7 @@ startRound = do
   zoom U.uCurrentAccuracyRange $ putPS (a, b)
   U.writeToLog $ "margins=" ++ show (a, b)
 
-finishRound :: StateT (U.Universe PredictorWain) IO ()
+finishRound :: StateT (U.Universe PatternWain) IO ()
 finishRound = do
   v <- use U.uCurrVector
   assign U.uPrevVector v
@@ -262,8 +264,8 @@ finishRound = do
 report :: String -> StateT Experiment IO ()
 report = zoom universe . U.writeToLog
 
-run :: [PredictorWain]
-      -> StateT (U.Universe PredictorWain) IO [PredictorWain]
+run :: [PatternWain]
+      -> StateT (U.Universe PatternWain) IO [PatternWain]
 run (me:otherWain:xs) = do
   when (null xs) $ U.writeToLog "WARNING: Last two wains  standing!"
   p <- U.popSize
@@ -360,7 +362,7 @@ runMetabolism = do
                  + sum (map (metabCost bmc cpcm ccf) (view W.litter a))
   adjustWainEnergy subject deltaE rMetabolismDeltaE "metabolism"
 
-metabCost :: Double -> Double -> Double -> PredictorWain -> Double
+metabCost :: Double -> Double -> Double -> PatternWain -> Double
 metabCost bmc cpcm scale w = scale * (bmc + cpcm * fromIntegral n)
   where n = numModels . view (W.brain . classifier) $ w
 
@@ -402,9 +404,9 @@ rewardPrediction = do
       zoom universe . U.writeToLog $ "DEBUG predictor learning rate=" ++ show (currentLearningRate wombat')
 
 chooseAction3
-  :: PredictorWain -> [UIDouble]
-    -> StateT (U.Universe PredictorWain) IO
-        (UIDouble, Int, Response Action, PredictorWain)
+  :: PatternWain -> [UIDouble]
+    -> StateT (U.Universe PatternWain) IO
+        (UIDouble, Int, Response Action, PatternWain)
 chooseAction3 w vs = do
   U.writeToLog $ "DEBUG 10"
   U.writeToLog $ "DEBUG 11 vs=" ++ show vs
@@ -428,7 +430,7 @@ chooseAction3 w vs = do
   return (dObjNovelty, dObjNoveltyAdj, r, w')
 
 analyseClassification
-  :: [[(Cl.Label, Cl.Difference)]] -> PredictorWain
+  :: [[(Cl.Label, Cl.Difference)]] -> PatternWain
     -> (Cl.Label, Cl.Difference, Int)
 analyseClassification ldss w = (dObjLabel, dObjNovelty, dObjNoveltyAdj)
   where ((dObjLabel, dObjNovelty):_)
@@ -470,15 +472,15 @@ makePrediction = do
   zoom (universe . U.uPredictions) $ putPS ps'
 
 describeModels
-  :: PredictorWain -> StateT (U.Universe PredictorWain) IO ()
+  :: PatternWain -> StateT (U.Universe PatternWain) IO ()
 describeModels w = mapM_ (U.writeToLog . f) ms
   where ms = toList . modelMap . view (W.brain . predictor) $ w
         f (l, r) = view W.name w ++ "'s predictor model " ++ show l
                      ++ "=" ++ pretty r
 
 describeOutcomes
-  :: PredictorWain -> [(Response Action, UIDouble, P.Label, [PM1Double])]
-    -> StateT (U.Universe PredictorWain) IO ()
+  :: PatternWain -> [(Response Action, UIDouble, P.Label, [PM1Double])]
+    -> StateT (U.Universe PatternWain) IO ()
 describeOutcomes w = mapM_ (U.writeToLog . f)
   where f (r, _, l, _) = view W.name w ++ "'s predicted outcome of "
                      ++ show (view action r) ++ " is "
@@ -543,7 +545,7 @@ killIfTooOld = do
     adjustWainEnergy subject (-100) rOldAgeDeltaE "old age"
 
 adjustPopControlDeltaE
-  :: [Stats.Statistic] -> StateT (U.Universe PredictorWain) IO ()
+  :: [Stats.Statistic] -> StateT (U.Universe PatternWain) IO ()
 adjustPopControlDeltaE xs =
   unless (null xs) $ do
     let (Just average) = Stats.lookup "avg. energy" xs
@@ -572,13 +574,13 @@ totalEnergy = do
   return (a + b, d + e)
 
 printStats
-  :: [[Stats.Statistic]] -> StateT (U.Universe PredictorWain) IO ()
+  :: [[Stats.Statistic]] -> StateT (U.Universe PatternWain) IO ()
 printStats = mapM_ f
   where f xs = U.writeToLog $
                  "Summary - " ++ intercalate "," (map pretty xs)
 
 adjustWainEnergy
-  :: Simple Lens Experiment PredictorWain -> Double
+  :: Simple Lens Experiment PatternWain -> Double
     -> Simple Lens Summary Double -> String -> StateT Experiment IO ()
 adjustWainEnergy
     wainSelector deltaE statLens reason = do
@@ -593,7 +595,7 @@ adjustWainEnergy
   assign wainSelector w'
 
 letSubjectReflect
-  :: PredictorWain -> Response Action -> StateT Experiment IO ()
+  :: PatternWain -> Response Action -> StateT Experiment IO ()
 letSubjectReflect wBefore r = do
   w <- use subject
   p <- zoom (universe . U.uPrevVector) getPS
@@ -603,7 +605,7 @@ letSubjectReflect wBefore r = do
 
 writeRawStats
   :: String -> FilePath -> [Stats.Statistic]
-    -> StateT (U.Universe PredictorWain) IO ()
+    -> StateT (U.Universe PatternWain) IO ()
 writeRawStats n f xs = do
   liftIO $ createDirectoryIfMissing True (dropFileName f)
   t <- U.currentTime
@@ -611,7 +613,7 @@ writeRawStats n f xs = do
     "time=" ++ show t ++ ",agent=" ++ n ++ ',':raw xs ++ "\n"
 
 reportAnyDeaths
-  :: [PredictorWain] -> StateT (U.Universe PredictorWain) IO ()
+  :: [PatternWain] -> StateT (U.Universe PatternWain) IO ()
 reportAnyDeaths ws = mapM_ f ws
   where f w = when (not . isAlive $ w) $
                 U.writeToLog

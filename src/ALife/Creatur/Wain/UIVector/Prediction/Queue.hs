@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------
 -- |
--- Module      :  ALife.Creatur.Wain.Prediction.Queue
+-- Module      :  ALife.Creatur.Wain.UIVector.Prediction.Queue
 -- Copyright   :  (c) Amy de Buitléir 2015
 -- License     :  BSD-style
 -- Maintainer  :  amy@nualeargais.ie

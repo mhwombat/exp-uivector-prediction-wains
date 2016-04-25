@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------
 -- |
--- Module      :  ALife.Creatur.Wain.Prediction.TestUtils
+-- Module      :  ALife.Creatur.Wain.UIVector.Prediction.TestUtils
 -- Copyright   :  (c) Amy de Buitléir 2013-2015
 -- License     :  BSD-style
 -- Maintainer  :  amy@nualeargais.ie
@@ -10,7 +10,7 @@
 -- QuickCheck test utilities.
 --
 ------------------------------------------------------------------------
-module ALife.Creatur.Wain.Prediction.TestUtils
+module ALife.Creatur.Wain.UIVector.Prediction.TestUtils
   (
     arb8BitDouble,
     arb8BitInt,

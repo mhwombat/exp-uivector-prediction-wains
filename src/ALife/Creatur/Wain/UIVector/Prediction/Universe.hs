@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------
 -- |
--- Module      :  ALife.Creatur.Wain.Prediction.Universe
+-- Module      :  ALife.Creatur.Wain.UIVector.Prediction.Universe
 -- Copyright   :  (c) Amy de Buitléir 2012-2015
 -- License     :  BSD-style
 -- Maintainer  :  amy@nualeargais.ie
@@ -16,7 +16,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
-module ALife.Creatur.Wain.Prediction.Universe
+module ALife.Creatur.Wain.UIVector.Prediction.Universe
   (
     -- * Constructors
     Universe(..),
@@ -55,12 +55,15 @@ module ALife.Creatur.Wain.Prediction.Universe
     uPopControlDeltaE,
     uClassifierThresholdRange,
     uClassifierR0Range,
-    uClassifierDRange,
+    uClassifierRfRange,
+    uClassifierTfRange,
     uPredictorThresholdRange,
     uPredictorR0Range,
-    uPredictorDRange,
+    uPredictorRfRange,
+    uPredictorTfRange,
     uDefaultOutcomeRange,
     uImprintOutcomeRange,
+    uReinforcementDeltasRange,
     uDepthRange,
     uCheckpoints,
     uCurrVector,
@@ -88,8 +91,8 @@ import ALife.Creatur (AgentId)
 import ALife.Creatur.Persistent (Persistent, mkPersistent)
 import qualified ALife.Creatur.Universe as U
 import qualified ALife.Creatur.Wain.Checkpoint as CP
-import ALife.Creatur.Wain.Prediction.Action (Action)
-import ALife.Creatur.Wain.Prediction.DataSource (DataSource,
+import ALife.Creatur.Wain.UIVector.Prediction.Action (Action)
+import ALife.Creatur.Wain.UIVector.Prediction.DataSource (DataSource,
   mkDataSource)
 import ALife.Creatur.Wain.Response (Response)
 import ALife.Creatur.Wain.PlusMinusOne (PM1Double)
@@ -98,7 +101,7 @@ import Control.Exception (SomeException, try)
 import Control.Lens hiding (Setting)
 import Data.AppSettings (Setting(..), GetSetting(..),
   FileLocation(Path), readSettings)
-import Data.Word (Word8, Word16)
+import Data.Word (Word8, Word16, Word64)
 import System.Directory (makeRelativeToCurrentDirectory)
 
 data Universe a = Universe
@@ -117,8 +120,8 @@ data Universe a = Universe
     _uGenFmris :: Bool,
     _uSleepBetweenTasks :: Int,
     _uVectorLength :: Int,
-    _uClassifierSizeRange :: (Word16, Word16),
-    _uPredictorSizeRange :: (Word16, Word16),
+    _uClassifierSizeRange :: (Word64, Word64),
+    _uPredictorSizeRange :: (Word64, Word64),
     _uDevotionRange :: (UIDouble, UIDouble),
     _uMaturityRange :: (Word16, Word16),
     _uMaxAge :: Int,
@@ -135,12 +138,15 @@ data Universe a = Universe
     _uPopControlDeltaE :: Persistent Double,
     _uClassifierThresholdRange :: (UIDouble, UIDouble),
     _uClassifierR0Range :: (UIDouble, UIDouble),
-    _uClassifierDRange :: (UIDouble, UIDouble),
+    _uClassifierRfRange :: (UIDouble, UIDouble),
+    _uClassifierTfRange :: (Word64, Word64),
     _uPredictorThresholdRange :: (UIDouble, UIDouble),
     _uPredictorR0Range :: (UIDouble, UIDouble),
-    _uPredictorDRange :: (UIDouble, UIDouble),
+    _uPredictorRfRange :: (UIDouble, UIDouble),
+    _uPredictorTfRange :: (Word64, Word64),
     _uDefaultOutcomeRange :: (PM1Double, PM1Double),
     _uImprintOutcomeRange :: (PM1Double, PM1Double),
+    _uReinforcementDeltasRange :: (PM1Double, PM1Double),
     _uDepthRange :: (Word8, Word8),
     _uCheckpoints :: [CP.Checkpoint],
     _uCurrVector :: Persistent [UIDouble],
@@ -199,11 +205,11 @@ cSleepBetweenTasks = requiredSetting "sleepTimeBetweenTasks"
 cVectorLength :: Setting Int
 cVectorLength = requiredSetting "vectorLength"
 
-cClassifierSizeRange :: Setting (Word16, Word16)
+cClassifierSizeRange :: Setting (Word64, Word64)
 cClassifierSizeRange
   = requiredSetting "classifierSizeRange"
 
-cPredictorSizeRange :: Setting (Word16, Word16)
+cPredictorSizeRange :: Setting (Word64, Word64)
 cPredictorSizeRange
   = requiredSetting "predictorSizeRange"
 
@@ -250,8 +256,11 @@ cClassifierThresholdRange = requiredSetting "classifierThresholdRange"
 cClassifierR0Range :: Setting (UIDouble, UIDouble)
 cClassifierR0Range = requiredSetting "classifierR0Range"
 
-cClassifierDRange :: Setting (UIDouble, UIDouble)
-cClassifierDRange = requiredSetting "classifierDecayRange"
+cClassifierRfRange :: Setting (UIDouble, UIDouble)
+cClassifierRfRange = requiredSetting "classifierRfRange"
+
+cClassifierTfRange :: Setting (Word64, Word64)
+cClassifierTfRange = requiredSetting "classifierTfRange"
 
 cPredictorThresholdRange :: Setting (UIDouble, UIDouble)
 cPredictorThresholdRange = requiredSetting "predictorThresholdRange"
@@ -259,14 +268,20 @@ cPredictorThresholdRange = requiredSetting "predictorThresholdRange"
 cPredictorR0Range :: Setting (UIDouble, UIDouble)
 cPredictorR0Range = requiredSetting "predictorR0Range"
 
-cPredictorDRange :: Setting (UIDouble, UIDouble)
-cPredictorDRange = requiredSetting "predictorDecayRange"
+cPredictorRfRange :: Setting (UIDouble, UIDouble)
+cPredictorRfRange = requiredSetting "predictorRfRange"
+
+cPredictorTfRange :: Setting (Word64, Word64)
+cPredictorTfRange = requiredSetting "predictorTfRange"
 
 cDefaultOutcomeRange :: Setting (PM1Double, PM1Double)
 cDefaultOutcomeRange = requiredSetting "defaultOutcomeRange"
 
 cImprintOutcomeRange :: Setting (PM1Double, PM1Double)
 cImprintOutcomeRange = requiredSetting "imprintOutcomeRange"
+
+cReinforcementDeltasRange :: Setting (PM1Double, PM1Double)
+cReinforcementDeltasRange = requiredSetting "reinforcementDeltasRange"
 
 cDepthRange :: Setting (Word8, Word8)
 cDepthRange = requiredSetting "depthRange"
@@ -276,7 +291,7 @@ cCheckpoints = requiredSetting "checkpoints"
 
 loadUniverse :: IO (Universe a)
 loadUniverse = do
-  configFile <- Path <$> makeRelativeToCurrentDirectory "prediction.config"
+  configFile <- Path <$> makeRelativeToCurrentDirectory "wain.config"
   readResult <- try $ readSettings configFile
   case readResult of
     Right (_, GetSetting getSetting) ->
@@ -323,12 +338,15 @@ config2Universe getSetting =
         = mkPersistent 0 (workDir ++ "/popControlDeltaE"),
       _uClassifierThresholdRange = getSetting cClassifierThresholdRange,
       _uClassifierR0Range = getSetting cClassifierR0Range,
-      _uClassifierDRange = getSetting cClassifierDRange,
+      _uClassifierRfRange = getSetting cClassifierRfRange,
+      _uClassifierTfRange = getSetting cClassifierTfRange,
       _uPredictorThresholdRange = getSetting cPredictorThresholdRange,
       _uPredictorR0Range = getSetting cPredictorR0Range,
-      _uPredictorDRange = getSetting cPredictorDRange,
+      _uPredictorRfRange = getSetting cPredictorRfRange,
+      _uPredictorTfRange = getSetting cPredictorTfRange,
       _uDefaultOutcomeRange = getSetting cDefaultOutcomeRange,
       _uImprintOutcomeRange = getSetting cImprintOutcomeRange,
+      _uReinforcementDeltasRange = getSetting cReinforcementDeltasRange,
       _uDepthRange = getSetting cDepthRange,
       _uCheckpoints = getSetting cCheckpoints,
       _uCurrVector = mkPersistent zeroes (workDir ++ "/currVector"),

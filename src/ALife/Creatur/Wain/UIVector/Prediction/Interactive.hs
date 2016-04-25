@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------
 -- |
--- Module      :  ALife.Creatur.Wain.Prediction.Daemon
+-- Module      :  ALife.Creatur.Wain.UIVector.Prediction.Daemon
 -- Copyright   :  (c) Amy de Buitléir 2013-2015
 -- License     :  BSD-style
 -- Maintainer  :  amy@nualeargais.ie
@@ -16,9 +16,9 @@ module Main where
 
 import ALife.Creatur.Daemon (Job(..), launchInteractive)
 import ALife.Creatur.Task (runInteractingAgents, simpleJob)
-import ALife.Creatur.Wain.Prediction.Experiment (PredictorWain, run, 
-  startRound, finishRound, versionInfo)
-import ALife.Creatur.Wain.Prediction.Universe (Universe(..),
+import ALife.Creatur.Wain.UIVector.Prediction.Experiment (PatternWain,
+  run, startRound, finishRound, versionInfo)
+import ALife.Creatur.Wain.UIVector.Prediction.Universe (Universe(..),
   writeToLog, loadUniverse, uSleepBetweenTasks)
 import Control.Concurrent (MVar, newMVar, readMVar, swapMVar)
 import Control.Lens
@@ -31,11 +31,11 @@ shutdownMessagePrinted :: MVar Bool
 shutdownMessagePrinted = unsafePerformIO (newMVar False)
 
 startupHandler
-  :: String -> Universe PredictorWain -> IO (Universe PredictorWain)
+  :: String -> Universe PatternWain -> IO (Universe PatternWain)
 startupHandler programName
   = execStateT (writeToLog $ "Starting " ++ programName)
 
-shutdownHandler :: String -> Universe PredictorWain -> IO ()
+shutdownHandler :: String -> Universe PatternWain -> IO ()
 shutdownHandler programName u = do
   -- Only print the message once
   handled <- readMVar shutdownMessagePrinted
