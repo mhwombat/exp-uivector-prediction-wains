@@ -26,7 +26,7 @@ executable exp-uivector-prediction-daemon
                     containers ==0.5.*,
                     creatur ==5.9.*,
                     creatur-uivector-wains ==1.0.* && >= 1.0.3,
-                    creatur-wains ==8.2.*,
+                    creatur-wains ==8.4.*,
                     directory ==1.2.*,
                     filepath ==1.4.*,
                     hdaemonize ==0.5.*,
@@ -58,7 +58,7 @@ executable exp-uivector-prediction-interactive
                     containers ==0.5.*,
                     creatur ==5.9.*,
                     creatur-uivector-wains ==1.0.* && >= 1.0.3,
-                    creatur-wains ==8.2.*,
+                    creatur-wains ==8.4.*,
                     directory ==1.2.*,
                     filepath ==1.4.*,
                     hdaemonize ==0.5.*,
@@ -90,7 +90,7 @@ executable exp-uivector-prediction-init
                     containers ==0.5.*,
                     creatur ==5.9.*,
                     creatur-uivector-wains ==1.0.* && >= 1.0.3,
-                    creatur-wains ==8.2.*,
+                    creatur-wains ==8.4.*,
                     directory ==1.2.*,
                     filepath ==1.4.*,
                     lens ==4.13.*,
@@ -121,7 +121,7 @@ executable exp-uivector-prediction-examine
                     containers ==0.5.*,
                     creatur ==5.9.*,
                     creatur-uivector-wains ==1.0.* && >= 1.0.3,
-                    creatur-wains ==8.2.*,
+                    creatur-wains ==8.4.*,
                     directory ==1.2.*,
                     filepath ==1.4.*,
                     lens ==4.13.*,
@@ -138,36 +138,36 @@ executable exp-uivector-prediction-examine
                     zlib ==0.6.*
   hs-source-dirs:   src
 
-executable exp-uivector-prediction-datagen
-  main-is:          ALife/Creatur/Wain/UIVector/Prediction/DataGen.hs
-  ghc-options:      -Wall -Werror
-  build-depends:
-                    app-settings ==0.2.* && >=0.2.0.5,
-                    array ==0.5.*,
-                    base >=4.8 && <5,
-                    bytestring ==0.10.*,
-                    cereal ==0.5.*,
-                    colour ==2.3.*,
-                    cond ==0.4.*,
-                    containers ==0.5.*,
-                    creatur ==5.9.*,
-                    creatur-uivector-wains ==1.0.* && >= 1.0.3,
-                    creatur-wains ==8.2.*,
-                    directory ==1.2.*,
-                    filepath ==1.4.*,
-                    lens ==4.13.*,
-                    MonadRandom ==0.4.*,
-                    mtl ==2.2.*,
-                    old-locale ==1.0.*,
-                    random ==1.1.*,
-                    som ==9.0.*,
-                    split ==0.2.*,
-                    time ==1.6.*,
-                    transformers ==0.5.*,
-                    unix ==2.7.*,
-                    vector ==0.11.*,
-                    zlib ==0.6.*
-  hs-source-dirs:   src
+-- executable exp-uivector-prediction-datagen
+--   main-is:          ALife/Creatur/Wain/UIVector/Prediction/DataGen.hs
+--   ghc-options:      -Wall -Werror
+--   build-depends:
+--                     app-settings ==0.2.* && >=0.2.0.5,
+--                     array ==0.5.*,
+--                     base >=4.8 && <5,
+--                     bytestring ==0.10.*,
+--                     cereal ==0.5.*,
+--                     colour ==2.3.*,
+--                     cond ==0.4.*,
+--                     containers ==0.5.*,
+--                     creatur ==5.9.*,
+--                     creatur-uivector-wains ==1.0.* && >= 1.0.3,
+--                     creatur-wains ==8.4.*,
+--                     directory ==1.2.*,
+--                     filepath ==1.4.*,
+--                     lens ==4.13.*,
+--                     MonadRandom ==0.4.*,
+--                     mtl ==2.2.*,
+--                     old-locale ==1.0.*,
+--                     random ==1.1.*,
+--                     som ==9.0.*,
+--                     split ==0.2.*,
+--                     time ==1.6.*,
+--                     transformers ==0.5.*,
+--                     unix ==2.7.*,
+--                     vector ==0.11.*,
+--                     zlib ==0.6.*
+--   hs-source-dirs:   src
 
 Test-suite exp-uivector-prediction-tests
   Type:             exitcode-stdio-1.0
@@ -185,7 +185,7 @@ Test-suite exp-uivector-prediction-tests
                     containers ==0.5.*,
                     creatur ==5.9.*,
                     creatur-uivector-wains ==1.0.* && >= 1.0.3,
-                    creatur-wains ==8.2.*,
+                    creatur-wains ==8.4.*,
                     creatur-wains-test-utils ==1.0.*,
                     directory ==1.2.*,
                     filepath ==1.4.*,
