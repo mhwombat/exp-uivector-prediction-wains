@@ -108,7 +108,7 @@ randomPatternWain wName u classifierSize = do
   predictorThreshold <- getRandomR (view U.uPredictorThresholdRange u)
   let predictorSize = classifierSize * fromIntegral numActions
   let dr = P.buildPredictor fd predictorSize predictorThreshold
-  hw <- (makeWeights . take 3) <$> getRandomRs unitInterval
+  hw <- (makeWeights . take 4) <$> getRandomRs unitInterval
   dOut <- take 4 <$> getRandomRs (view U.uDefaultOutcomeRange u)
   dp <- getRandomR $ view U.uDepthRange u
   let mr = makeMuser dOut dp
