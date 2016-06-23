@@ -402,9 +402,9 @@ chooseAction3 w vs = do
   whenM (use U.uShowPredictions) $ describeOutcomes w rplos
   U.writeToLog $ "To " ++ agentId w
     ++ ", the vector has adjusted novelty " ++ show dObjNoveltyAdj
-  mapM_ U.writeToLog $ scenarioReport sps
-  mapM_ U.writeToLog $ responseReport rplos
-  mapM_ U.writeToLog $ decisionReport aohs
+  -- mapM_ U.writeToLog $ scenarioReport sps
+  -- mapM_ U.writeToLog $ responseReport rplos
+  -- mapM_ U.writeToLog $ decisionReport aohs
   U.writeToLog $ agentId w ++ " chooses to " ++ show (view action r)
     ++ " predicting the outcomes " ++ show (view outcomes r)
   return (dObjNovelty, dObjNoveltyAdj, r, w')
