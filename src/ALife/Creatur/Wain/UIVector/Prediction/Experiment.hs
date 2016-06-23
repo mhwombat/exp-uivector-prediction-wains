@@ -110,7 +110,7 @@ randomPatternWain wName u classifierSize = do
   hw <- (makeWeights . take 4) <$> getRandomRs unitInterval
   dOut <- take 4 <$> getRandomRs (view U.uDefaultOutcomeRange u)
   dp <- getRandomR $ view U.uDepthRange u
-  let mr = makeMuser dOut dp
+  let (Right mr) = makeMuser dOut dp
   t <- getRandom
   s <- getRandomR (view U.uStrictnessRange u)
   ios <- take 4 <$> getRandomRs (view U.uImprintOutcomeRange u)
