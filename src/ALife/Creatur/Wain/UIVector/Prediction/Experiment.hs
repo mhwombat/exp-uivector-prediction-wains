@@ -292,7 +292,6 @@ run' = do
   report $ "At beginning of turn, " ++ agentId a
     ++ "'s summary: " ++ pretty (Stats.stats a)
   rewardPrediction
-  runMetabolism
   autoPopControl <- use (universe . U.uPopControl)
   when autoPopControl applyPopControl
   subject %= W.incAge
@@ -305,6 +304,7 @@ run' = do
   (ef, ecf) <- totalEnergy
   balanceEnergyEquation e0 ec0 ef ecf
   updateChildren
+  runMetabolism
   killIfTooOld
   agentStats <- ((Stats.stats a' ++) . summaryStats) <$> use summary
   report $ "At end of turn, " ++ agentId a
