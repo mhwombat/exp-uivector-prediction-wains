@@ -39,8 +39,7 @@ import qualified ALife.Creatur.Wain.Classifier as Cl
 import ALife.Creatur.Wain.Muser (makeMuser)
 import qualified ALife.Creatur.Wain.Predictor as P
 import ALife.Creatur.Wain.GeneticSOM (RandomLearningParams(..),
-  randomLearningFunction, schemaQuality, modelMap, currentLearningRate,
-  numModels)
+  randomLearningFunction, schemaQuality, modelMap, numModels)
 import ALife.Creatur.Wain.PlusMinusOne (PM1Double, pm1ToDouble)
 import ALife.Creatur.Wain.PersistentStatistics (updateStats, readStats,
   clearStats)
@@ -219,16 +218,12 @@ scaledDelta x y = doubleToUI $ (uiToDouble x - uiToDouble y)/2 + 0.5
 
 startRound :: StateT (U.Universe PatternWain) IO ()
 startRound = do
-  U.writeToLog $ "DEBUG 1"
   xsOld <- zoom U.uCurrVector getPS
-  U.writeToLog $ "DEBUG 2"
   xs <- zoom U.uDataSource nextVector
-  U.writeToLog $ "DEBUG 3"
   let deltas = zipWith scaledDelta xs xsOld
     -- xs is shorter because it doesn't include any deltas, so the
     -- result will be the same length as xs, and won't include any
     -- deltas of previous deltas.
-  U.writeToLog $ "DEBUG 4"
   zoom U.uCurrVector $ putPS (xs ++ deltas)
   U.writeToLog $ "Current data: " ++ show xs
   U.writeToLog $ "Deltas: " ++ show deltas
@@ -388,41 +383,23 @@ rewardPrediction = do
         ++ ", reward is " ++ show deltaE
       when (deltaE > 0) $ assign (summary . rRewardCount) 1
       assign (summary . rPredictedValue) predicted
-      zoom universe . U.writeToLog $ "DEBUG 20a"
       assign (summary . rActualValue) actual
-      zoom universe . U.writeToLog $ "DEBUG 20b"
       let err = abs $ uiToDouble actual - uiToDouble predicted
-      zoom universe . U.writeToLog $ "DEBUG 20c err=" ++ show err
       assign (summary . rValuePredictionErr) err
-      zoom universe . U.writeToLog $ "DEBUG 21"
-      a' <- use subject
-      let wombat = view (W.brain . predictor) a'
-      zoom universe . U.writeToLog $ "DEBUG predictor learning rate=" ++ show (currentLearningRate wombat)
       letSubjectReflect a r
-      zoom universe . U.writeToLog $ "DEBUG 23"
       zoom (universe . U.uPredictions) . putPS . remove3 (agentId a) $ ps
-      zoom universe . U.writeToLog $ "DEBUG 24"
-      a'' <- use subject
-      let wombat' = view (W.brain . predictor) a''
-      zoom universe . U.writeToLog $ "DEBUG predictor learning rate=" ++ show (currentLearningRate wombat')
 
 chooseAction3
   :: PatternWain -> [UIDouble]
     -> StateT (U.Universe PatternWain) IO
         (UIDouble, Int, Response Action, PatternWain)
 chooseAction3 w vs = do
-  U.writeToLog $ "DEBUG 10"
-  U.writeToLog $ "DEBUG 11 vs=" ++ show vs
   whenM (use U.uShowPredictorModels) $ describeModels w
-  U.writeToLog $ "DEBUG 12"
   let (lds, sps, rplos, aohs, r, w')
         = W.chooseAction [vs] w
   let (_, dObjNovelty, dObjNoveltyAdj)
           = analyseClassification lds w
-  U.writeToLog $ "DEBUG 13"
   whenM (use U.uShowPredictions) $ describeOutcomes w rplos
-  U.writeToLog $ "DEBUG 14"
-  U.writeToLog $ "DEBUG nov=" ++ show dObjNovelty ++ ", age=" ++ show (view W.age w)
   U.writeToLog $ "To " ++ agentId w
     ++ ", the vector has adjusted novelty " ++ show dObjNoveltyAdj
   mapM_ U.writeToLog $ scenarioReport sps
