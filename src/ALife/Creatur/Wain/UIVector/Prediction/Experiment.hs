@@ -32,8 +32,7 @@ import ALife.Creatur (agentId, isAlive, programVersion)
 import ALife.Creatur.Persistent (getPS, putPS)
 import ALife.Creatur.Task (checkPopSize)
 import qualified ALife.Creatur.Wain as W
-import ALife.Creatur.Wain.Brain (makeBrain, scenarioReport,
-  responseReport, decisionReport, predictor, classifier)
+import ALife.Creatur.Wain.Brain (makeBrain, predictor, classifier)
 import ALife.Creatur.Wain.Checkpoint (enforceAll)
 import qualified ALife.Creatur.Wain.Classifier as Cl
 import ALife.Creatur.Wain.Muser (makeMuser)
@@ -395,7 +394,7 @@ chooseAction3
         (UIDouble, Int, Response Action, PatternWain)
 chooseAction3 w vs = do
   whenM (use U.uShowPredictorModels) $ describeModels w
-  let (lds, sps, rplos, aohs, r, w')
+  let (lds, _, rplos, _, r, w')
         = W.chooseAction [vs] w
   let (_, dObjNovelty, dObjNoveltyAdj)
           = analyseClassification lds w

@@ -41,6 +41,7 @@ objectId (IObject _ s) = "Image " ++ s
 objectId (AObject a) = agentId a
 
 objectNum :: Object a -> Int
+objectNum (IObject _ _) = error "empty vector"
 objectNum (IObject _ s) = read [head s]
 objectNum (AObject _) = 10
 
