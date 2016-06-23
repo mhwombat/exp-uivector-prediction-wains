@@ -30,7 +30,7 @@ module ALife.Creatur.Wain.UIVector.Prediction.Experiment
 
 import ALife.Creatur (agentId, isAlive, programVersion)
 import ALife.Creatur.Persistent (getPS, putPS)
-import ALife.Creatur.Task (checkPopSize)
+import ALife.Creatur.Task (checkPopSize, requestShutdown)
 import qualified ALife.Creatur.Wain as W
 import ALife.Creatur.Wain.Brain (makeBrain, predictor, classifier)
 import ALife.Creatur.Wain.Checkpoint (enforceAll)
@@ -44,7 +44,8 @@ import ALife.Creatur.Wain.PersistentStatistics (updateStats, readStats,
   clearStats)
 import ALife.Creatur.Wain.UIVector.Prediction.Action (Action(..), predict,
   numActions)
-import ALife.Creatur.Wain.UIVector.Prediction.DataSource (nextVector)
+import ALife.Creatur.Wain.UIVector.Prediction.DataSource (endOfData,
+  nextVector)
 import ALife.Creatur.Wain.UIVector.Tweaker (PatternTweaker(..))
 import qualified ALife.Creatur.Wain.UIVector.Prediction.Universe as U
 import ALife.Creatur.Wain.Pretty (pretty)
@@ -217,6 +218,7 @@ scaledDelta x y = doubleToUI $ (uiToDouble x - uiToDouble y)/2 + 0.5
 
 startRound :: StateT (U.Universe PatternWain) IO ()
 startRound = do
+  whenM (zoom U.uDataSource endOfData) $ requestShutdown "end of data"
   xsOld <- zoom U.uCurrVector getPS
   xs <- zoom U.uDataSource nextVector
   let deltas = zipWith scaledDelta xs xsOld
