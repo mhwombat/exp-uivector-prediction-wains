@@ -70,7 +70,8 @@ module ALife.Creatur.Wain.UIVector.Prediction.Universe
     uCurrVector,
     uPrevVector,
     uCurrentAccuracyRange,
-    uPredictions,
+    uPreviousPredictions,
+    uNewPredictions,
     -- * Other
     U.agentIds,
     U.currentTime,
@@ -154,7 +155,9 @@ data Universe a = Universe
     _uCurrVector :: Persistent [UIDouble],
     _uPrevVector :: Persistent [UIDouble],
     _uCurrentAccuracyRange :: Persistent (UIDouble, UIDouble),
-    _uPredictions :: Persistent [(AgentId, Response Action, UIDouble)]
+    _uPreviousPredictions
+      :: Persistent [(AgentId, Response Action, UIDouble)],
+    _uNewPredictions :: Persistent [(AgentId, Response Action, UIDouble)]
   } deriving Show
 makeLenses ''Universe
 
@@ -360,7 +363,9 @@ config2Universe getSetting =
       _uCurrentAccuracyRange
         = mkPersistent (doubleToUI 0, doubleToUI 0)
             (workDir ++ "/accuracy"),
-      _uPredictions = mkPersistent [] (workDir ++ "/predictions")
+      _uPreviousPredictions
+        = mkPersistent [] (workDir ++ "/prevPredictions"),
+      _uNewPredictions = mkPersistent [] (workDir ++ "/newPredictions")
     }
   where en = getSetting cExperimentName
         workDir = getSetting cWorkingDir

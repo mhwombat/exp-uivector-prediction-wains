@@ -229,7 +229,9 @@ startRound = do
   U.writeToLog $ "Current data: " ++ show xs
   U.writeToLog $ "Deltas: " ++ show deltas
   let actual = head xs
-  ps <- zoom U.uPredictions getPS
+  ps <- zoom U.uNewPredictions getPS
+  zoom U.uPreviousPredictions $ putPS ps
+  zoom U.uNewPredictions $ putPS []
   let wombat = map thirdOfThree ps
   U.writeToLog $ "Debug: predictions" ++ show wombat
   when (not . null $ ps) $ do
@@ -244,7 +246,6 @@ startRound = do
   let b = doubleToUI . enforceRange unitInterval $
             (uiToDouble actual + uiToDouble margin)
   zoom U.uCurrentAccuracyRange $ putPS (a, b)
-  zoom U.uPredictions $ putPS []
   U.writeToLog $ "margins=" ++ show (a, b)
 
 finishRound :: StateT (U.Universe PatternWain) IO ()
@@ -371,7 +372,7 @@ metabCost bmc cpcm scale w = scale * (bmc + cpcm * fromIntegral n)
 rewardPrediction :: StateT Experiment IO ()
 rewardPrediction = do
   a <- use subject
-  ps <- zoom (universe . U.uPredictions) getPS
+  ps <- zoom (universe . U.uPreviousPredictions) getPS
   case lookup3 (agentId a) ps of
     Nothing ->
       zoom universe . U.writeToLog $ "First turn for " ++ agentId a
@@ -391,7 +392,7 @@ rewardPrediction = do
       let err = abs $ uiToDouble actual - uiToDouble predicted
       assign (summary . rValuePredictionErr) err
       letSubjectReflect a r
-      zoom (universe . U.uPredictions) . putPS . remove3 (agentId a) $ ps
+      -- zoom (universe . U.uPredictions) . putPS . remove3 (agentId a) $ ps
 
 chooseAction3
   :: PatternWain -> [UIDouble]
@@ -427,10 +428,10 @@ lookup3 k ((a, b, c):xs) | a == k    = Just (b, c)
                          | otherwise = lookup3 k xs
 lookup3 _ [] = Nothing
 
-remove3 :: Eq a => a -> [(a, b, c)] -> [(a, b, c)]
-remove3 k ((a, b, c):xs) | a == k    = xs
-                         | otherwise = (a, b, c):remove3 k xs
-remove3 _ [] = []
+-- remove3 :: Eq a => a -> [(a, b, c)] -> [(a, b, c)]
+-- remove3 k ((a, b, c):xs) | a == k    = xs
+--                          | otherwise = (a, b, c):remove3 k xs
+-- remove3 _ [] = []
 
 thirdOfThree :: (a, b, c) -> c
 thirdOfThree (_, _, c) = c
@@ -444,7 +445,7 @@ makePrediction = do
   assign (summary.rVectorNovelty) dObjNovelty
   assign (summary.rVectorAdjustedNovelty) dObjNoveltyAdj
   assign subject a'
-  ps <- zoom (universe . U.uPredictions) getPS
+  ps <- zoom (universe . U.uNewPredictions) getPS
   when (null dObj) $
     zoom universe . U.writeToLog $ "WARNING: dObj is null"
   let x = head dObj
@@ -452,7 +453,7 @@ makePrediction = do
   zoom universe . U.writeToLog $
     agentId a ++ " predicts " ++ show xPredicted
   let ps' = (agentId a, r, xPredicted) : ps
-  zoom (universe . U.uPredictions) $ putPS ps'
+  zoom (universe . U.uNewPredictions) $ putPS ps'
 
 describeModels
   :: PatternWain -> StateT (U.Universe PatternWain) IO ()
