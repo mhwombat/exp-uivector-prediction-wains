@@ -230,8 +230,10 @@ startRound = do
   U.writeToLog $ "Deltas: " ++ show deltas
   let actual = head xs
   ps <- zoom U.uPredictions getPS
+  let wombat = map thirdOfThree ps
+  U.writeToLog $ "Debug: predictions" ++ show wombat
   when (not . null $ ps) $ do
-    let predicted = mean . map uiToDouble $ thirdOfThree ps
+    let predicted = mean . map (uiToDouble . thirdOfThree) $ ps
     let err = abs (uiToDouble actual - predicted)
     U.writeToLog $ "actual=" ++ show actual
       ++ " predicted=" ++ show predicted
@@ -429,9 +431,8 @@ remove3 k ((a, b, c):xs) | a == k    = xs
                          | otherwise = (a, b, c):remove3 k xs
 remove3 _ [] = []
 
-thirdOfThree :: [(a, b, c)] -> [c]
-thirdOfThree ((_, _, c):xs) = c : thirdOfThree xs
-thirdOfThree [] = []
+thirdOfThree :: (a, b, c) -> c
+thirdOfThree (_, _, c) = c
 
 makePrediction :: StateT Experiment IO ()
 makePrediction = do
