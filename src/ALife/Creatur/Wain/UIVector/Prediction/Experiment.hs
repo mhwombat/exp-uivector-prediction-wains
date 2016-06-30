@@ -244,6 +244,7 @@ startRound = do
   let b = doubleToUI . enforceRange unitInterval $
             (uiToDouble actual + uiToDouble margin)
   zoom U.uCurrentAccuracyRange $ putPS (a, b)
+  zoom U.uPredictions $ putPS []
   U.writeToLog $ "margins=" ++ show (a, b)
 
 finishRound :: StateT (U.Universe PatternWain) IO ()
