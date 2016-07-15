@@ -373,12 +373,13 @@ rewardPrediction = do
     Just (r, predicted) -> do
       accuracyDeltaE <- use (universe . U.uAccuracyDeltaE)
       actual <- head <$> zoom (universe . U.uCurrVector) getPS
-      let accuracy = 1 - abs(actual - predicted) :: UIDouble
-      let deltaE = uiToDouble accuracy * accuracyDeltaE
+      let accuracy = 1 - abs(uiToDouble actual - uiToDouble predicted)
+      let deltaE = accuracy * accuracyDeltaE
       adjustWainEnergy subject deltaE rPredDeltaE "prediction"
       zoom universe . U.writeToLog $
         agentId a ++ " predicted " ++ show predicted
         ++ ", actual value was " ++ show actual
+        ++ ", accuracy was " ++ show accuracy
         ++ ", reward is " ++ show deltaE
       when (deltaE > 0) $ assign (summary . rRewardCount) 1
       assign (summary . rPredictedValue) predicted
