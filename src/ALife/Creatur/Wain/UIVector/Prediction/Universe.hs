@@ -69,7 +69,6 @@ module ALife.Creatur.Wain.UIVector.Prediction.Universe
     uCheckpoints,
     uCurrVector,
     uPrevVector,
-    uCurrentAccuracyRange,
     uPreviousPredictions,
     uNewPredictions,
     -- * Other
@@ -154,7 +153,6 @@ data Universe a = Universe
     _uCheckpoints :: [CP.Checkpoint],
     _uCurrVector :: Persistent [UIDouble],
     _uPrevVector :: Persistent [UIDouble],
-    _uCurrentAccuracyRange :: Persistent (UIDouble, UIDouble),
     _uPreviousPredictions
       :: Persistent [(AgentId, Response Action, UIDouble)],
     _uNewPredictions :: Persistent [(AgentId, Response Action, UIDouble)]
@@ -360,9 +358,6 @@ config2Universe getSetting =
       _uCheckpoints = getSetting cCheckpoints,
       _uCurrVector = mkPersistent zeroes (workDir ++ "/currVector"),
       _uPrevVector = mkPersistent zeroes (workDir ++ "/prevVector"),
-      _uCurrentAccuracyRange
-        = mkPersistent (doubleToUI 0, doubleToUI 0)
-            (workDir ++ "/accuracy"),
       _uPreviousPredictions
         = mkPersistent [] (workDir ++ "/prevPredictions"),
       _uNewPredictions = mkPersistent [] (workDir ++ "/newPredictions")

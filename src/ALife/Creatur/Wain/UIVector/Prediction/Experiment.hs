@@ -58,7 +58,7 @@ import ALife.Creatur.Wain.UIVector.Tweaker (PatternTweaker(..))
 import qualified ALife.Creatur.Wain.UIVector.Wain as UW
 import ALife.Creatur.Wain.UnitInterval (UIDouble, uiToDouble,
   doubleToUI)
-import ALife.Creatur.Wain.Util (unitInterval, enforceRange, inRange)
+import ALife.Creatur.Wain.Util (unitInterval)
 import ALife.Creatur.Wain.Weights (makeWeights)
 import Control.Conditional (whenM)
 import Control.Lens hiding (universe)
@@ -235,21 +235,12 @@ startRound = do
   ps <- zoom U.uNewPredictions getPS
   zoom U.uPreviousPredictions $ putPS ps
   zoom U.uNewPredictions $ putPS []
-  let wombat = map thirdOfThree ps
-  U.writeToLog $ "Debug: predictions" ++ show wombat
   when (not . null $ ps) $ do
     let predicted = mean . map (uiToDouble . thirdOfThree) $ ps
     let err = abs (uiToDouble actual - predicted)
     U.writeToLog $ "actual=" ++ show actual
       ++ " predicted=" ++ show predicted
       ++ " err=" ++ show err
-  margin <- use U.uAccuracyMargin
-  let a = doubleToUI . enforceRange unitInterval $
-            (uiToDouble actual - uiToDouble margin)
-  let b = doubleToUI . enforceRange unitInterval $
-            (uiToDouble actual + uiToDouble margin)
-  zoom U.uCurrentAccuracyRange $ putPS (a, b)
-  U.writeToLog $ "margins=" ++ show (a, b)
 
 finishRound :: StateT (U.Universe PatternWain) IO ()
 finishRound = do
@@ -380,11 +371,11 @@ rewardPrediction = do
     Nothing ->
       zoom universe . U.writeToLog $ "First turn for " ++ agentId a
     Just (r, predicted) -> do
-      range <- zoom (universe . U.uCurrentAccuracyRange) getPS
       accuracyDeltaE <- use (universe . U.uAccuracyDeltaE)
-      let deltaE = if inRange range predicted then accuracyDeltaE else 0
-      adjustWainEnergy subject deltaE rPredDeltaE "prediction"
       actual <- head <$> zoom (universe . U.uCurrVector) getPS
+      let accuracy = 1 - abs(actual - predicted) :: UIDouble
+      let deltaE = uiToDouble accuracy * accuracyDeltaE
+      adjustWainEnergy subject deltaE rPredDeltaE "prediction"
       zoom universe . U.writeToLog $
         agentId a ++ " predicted " ++ show predicted
         ++ ", actual value was " ++ show actual
