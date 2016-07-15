@@ -1,5 +1,5 @@
 name:                exp-uivector-prediction-wains
-version:             1.1.7
+version:             1.1.8
 synopsis:            Agent for predicting the future.
 description:         ALife agent that competes with other
                      agents to predict the future.
@@ -8,7 +8,7 @@ license:             BSD3
 license-file:        LICENSE
 author:              Amy de Buitléir
 maintainer:          amy@nualeargais.ie
-copyright:           (c) Amy de Buitléir 2013-2015
+copyright:           (c) Amy de Buitléir 2013-2016
 category:            Data
 build-type:          Simple
 cabal-version:       >=1.8
@@ -25,8 +25,9 @@ executable exp-uivector-prediction-daemon
                     cond ==0.4.*,
                     containers ==0.5.*,
                     creatur ==5.9.*,
-                    creatur-uivector-wains ==1.0.* && >= 1.0.3,
-                    creatur-wains ==8.4.*,
+                    creatur-uivector-wains ==1.1.*,
+                    creatur-wains ==8.5.*,
+                    deepseq ==1.4.*,
                     directory ==1.2.*,
                     filepath ==1.4.*,
                     hdaemonize ==0.5.*,
@@ -57,8 +58,9 @@ executable exp-uivector-prediction-interactive
                     cond ==0.4.*,
                     containers ==0.5.*,
                     creatur ==5.9.*,
-                    creatur-uivector-wains ==1.0.* && >= 1.0.3,
-                    creatur-wains ==8.4.*,
+                    creatur-uivector-wains ==1.1.*,
+                    creatur-wains ==8.5.*,
+                    deepseq ==1.4.*,
                     directory ==1.2.*,
                     filepath ==1.4.*,
                     hdaemonize ==0.5.*,
@@ -89,8 +91,9 @@ executable exp-uivector-prediction-init
                     colour ==2.3.*,
                     containers ==0.5.*,
                     creatur ==5.9.*,
-                    creatur-uivector-wains ==1.0.* && >= 1.0.3,
-                    creatur-wains ==8.4.*,
+                    creatur-uivector-wains ==1.1.*,
+                    creatur-wains ==8.5.*,
+                    deepseq ==1.4.*,
                     directory ==1.2.*,
                     filepath ==1.4.*,
                     lens ==4.13.*,
@@ -120,8 +123,9 @@ executable exp-uivector-prediction-examine
                     cond ==0.4.*,
                     containers ==0.5.*,
                     creatur ==5.9.*,
-                    creatur-uivector-wains ==1.0.* && >= 1.0.3,
-                    creatur-wains ==8.4.*,
+                    creatur-uivector-wains ==1.1.*,
+                    creatur-wains ==8.5.*,
+                    deepseq ==1.4.*,
                     directory ==1.2.*,
                     filepath ==1.4.*,
                     lens ==4.13.*,
@@ -151,8 +155,8 @@ executable exp-uivector-prediction-examine
 --                     cond ==0.4.*,
 --                     containers ==0.5.*,
 --                     creatur ==5.9.*,
---                     creatur-uivector-wains ==1.0.* && >= 1.0.3,
---                     creatur-wains ==8.4.*,
+--                     creatur-uivector-wains ==1.1.*,
+--                     creatur-wains ==8.5.*,
 --                     directory ==1.2.*,
 --                     filepath ==1.4.*,
 --                     lens ==4.13.*,
@@ -184,9 +188,10 @@ Test-suite exp-uivector-prediction-tests
                     cond ==0.4.*,
                     containers ==0.5.*,
                     creatur ==5.9.*,
-                    creatur-uivector-wains ==1.0.* && >= 1.0.3,
-                    creatur-wains ==8.4.*,
+                    creatur-uivector-wains ==1.1.*,
+                    creatur-wains ==8.5.*,
                     creatur-wains-test-utils ==1.0.*,
+                    deepseq ==1.4.*,
                     directory ==1.2.*,
                     filepath ==1.4.*,
                     lens ==4.13.*,

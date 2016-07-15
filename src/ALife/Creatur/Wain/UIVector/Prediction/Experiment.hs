@@ -1,7 +1,7 @@
 ------------------------------------------------------------------------
 -- |
 -- Module      :  ALife.Creatur.Wain.UIVector.Prediction.Experiment
--- Copyright   :  (c) Amy de Buitléir 2012-2015
+-- Copyright   :  (c) Amy de Buitléir 2012-2016
 -- License     :  BSD-style
 -- Maintainer  :  amy@nualeargais.ie
 -- Stability   :  experimental
@@ -42,17 +42,19 @@ import ALife.Creatur.Wain.GeneticSOM (RandomLearningParams(..),
 import ALife.Creatur.Wain.PlusMinusOne (PM1Double, pm1ToDouble)
 import ALife.Creatur.Wain.PersistentStatistics (updateStats, readStats,
   clearStats)
-import ALife.Creatur.Wain.UIVector.Prediction.Action (Action(..), predict,
-  numActions)
-import ALife.Creatur.Wain.UIVector.Prediction.DataSource (endOfData,
-  nextVector)
-import ALife.Creatur.Wain.UIVector.Tweaker (PatternTweaker(..))
 import qualified ALife.Creatur.Wain.UIVector.Prediction.Universe as U
 import ALife.Creatur.Wain.Pretty (pretty)
 import ALife.Creatur.Wain.Raw (raw)
 import ALife.Creatur.Wain.Response (Response, action, outcomes)
 import qualified ALife.Creatur.Wain.Statistics as Stats
 import ALife.Creatur.Wain.Statistics (summarise)
+import ALife.Creatur.Wain.UIVector.Prediction.Action (Action(..),
+  predict)
+import ALife.Creatur.Wain.UIVector.Prediction.DataSource (endOfData,
+  nextVector)
+import ALife.Creatur.Wain.UIVector.Prediction.ResponseTweaker
+  (ResponseTweaker(..))
+import ALife.Creatur.Wain.UIVector.Tweaker (PatternTweaker(..))
 import qualified ALife.Creatur.Wain.UIVector.Wain as UW
 import ALife.Creatur.Wain.UnitInterval (UIDouble, uiToDouble,
   doubleToUI)
@@ -82,13 +84,14 @@ versionInfo
       ++ ", " ++ W.packageVersion
       ++ ", " ++ ALife.Creatur.programVersion
 
-type PatternWain = W.Wain [UIDouble] PatternTweaker  Action
+type PatternWain
+  = W.Wain [UIDouble] PatternTweaker ResponseTweaker Action
 
 randomPatternWain
   :: RandomGen r
-    => String -> U.Universe PatternWain -> Word64
+    => String -> U.Universe PatternWain -> Word64 -> Word64
       -> Rand r PatternWain
-randomPatternWain wName u classifierSize = do
+randomPatternWain wName u classifierSize predictorSize = do
   let k = view U.uVectorLength u
   let fcp = RandomLearningParams
               { _r0Range = view U.uPredictorR0Range u,
@@ -105,8 +108,8 @@ randomPatternWain wName u classifierSize = do
                 _tfRange = view U.uPredictorTfRange u }
   fd <- randomLearningFunction fdp
   predictorThreshold <- getRandomR (view U.uPredictorThresholdRange u)
-  let predictorSize = classifierSize * fromIntegral numActions
-  let dr = P.buildPredictor fd predictorSize predictorThreshold
+  rtw <- (ResponseTweaker . makeWeights . take 2) <$> getRandoms
+  let dr = P.buildPredictor fd predictorSize predictorThreshold rtw
   hw <- (makeWeights . take 4) <$> getRandomRs unitInterval
   dOut <- take 4 <$> getRandomRs (view U.uDefaultOutcomeRange u)
   dp <- getRandomR $ view U.uDepthRange u
@@ -601,8 +604,7 @@ reportAnyDeaths
 reportAnyDeaths ws = mapM_ f ws
   where f w = when (not . isAlive $ w) $
                 U.writeToLog
-                  (agentId w ++ " dead at age "
-                    ++ show (view W.age w))
+                  (agentId w ++ " dead at age " ++ show (view W.age w))
 
 -- mean :: (Eq a, Fractional a, Foldable t) => t a -> a
 mean :: (Fractional a, Eq a) => [a] -> a

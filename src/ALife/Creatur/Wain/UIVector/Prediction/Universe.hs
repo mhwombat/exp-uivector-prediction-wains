@@ -1,7 +1,7 @@
 ------------------------------------------------------------------------
 -- |
 -- Module      :  ALife.Creatur.Wain.UIVector.Prediction.Universe
--- Copyright   :  (c) Amy de Buitléir 2012-2015
+-- Copyright   :  (c) Amy de Buitléir 2012-2016
 -- License     :  BSD-style
 -- Maintainer  :  amy@nualeargais.ie
 -- Stability   :  experimental
@@ -38,7 +38,7 @@ module ALife.Creatur.Wain.UIVector.Prediction.Universe
     uSleepBetweenTasks,
     uVectorLength,
     uClassifierSizeRange,
-    -- uPredictorSizeRange,
+    uPredictorSizeRange,
     uDevotionRange,
     uMaturityRange,
     uMaxAge,
@@ -123,7 +123,7 @@ data Universe a = Universe
     _uSleepBetweenTasks :: Int,
     _uVectorLength :: Int,
     _uClassifierSizeRange :: (Word64, Word64),
-    -- _uPredictorSizeRange :: (Word64, Word64),
+    _uPredictorSizeRange :: (Word64, Word64),
     _uDevotionRange :: (UIDouble, UIDouble),
     _uMaturityRange :: (Word16, Word16),
     _uMaxAge :: Int,
@@ -214,9 +214,9 @@ cClassifierSizeRange :: Setting (Word64, Word64)
 cClassifierSizeRange
   = requiredSetting "classifierSizeRange"
 
--- cPredictorSizeRange :: Setting (Word64, Word64)
--- cPredictorSizeRange
---   = requiredSetting "predictorSizeRange"
+cPredictorSizeRange :: Setting (Word64, Word64)
+cPredictorSizeRange
+  = requiredSetting "predictorSizeRange"
 
 cDevotionRange :: Setting (UIDouble, UIDouble)
 cDevotionRange = requiredSetting "devotionRange"
@@ -327,7 +327,7 @@ config2Universe getSetting =
       _uSleepBetweenTasks = getSetting cSleepBetweenTasks,
       _uVectorLength = n,
       _uClassifierSizeRange = getSetting cClassifierSizeRange,
-      -- _uPredictorSizeRange = getSetting cPredictorSizeRange,
+      _uPredictorSizeRange = getSetting cPredictorSizeRange,
       _uDevotionRange = getSetting cDevotionRange,
       _uMaturityRange = getSetting cMaturityRange,
       _uMaxAge = getSetting cMaxAge,

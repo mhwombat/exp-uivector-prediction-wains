@@ -1,7 +1,7 @@
 ------------------------------------------------------------------------
 -- |
 -- Module      :  ALife.Creatur.Wain.UIVector.Prediction.GeneratePopulation
--- Copyright   :  (c) Amy de Buitléir 2012-2015
+-- Copyright   :  (c) Amy de Buitléir 2012-2016
 -- License     :  BSD-style
 -- Maintainer  :  amy@nualeargais.ie
 -- Stability   :  experimental
@@ -21,7 +21,7 @@ import ALife.Creatur.Wain.PersistentStatistics (clearStats)
 import ALife.Creatur.Wain.Statistics (Statistic, stats, summarise)
 import ALife.Creatur.Wain.UIVector.Prediction.Universe (Universe(..),
   writeToLog, store, loadUniverse, uClassifierSizeRange,
-  uInitialPopulationSize, uStatsFile)
+  uPredictorSizeRange, uInitialPopulationSize, uStatsFile)
 import Control.Lens
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Random (evalRandIO)
@@ -34,9 +34,11 @@ introduceRandomAgent name = do
   u <- get
   classifierSize
     <- liftIO . evalRandIO . getRandomR . view uClassifierSizeRange $ u
+  predictorSize
+    <- liftIO . evalRandIO . getRandomR . view uPredictorSizeRange $ u
   agent
     <- liftIO . evalRandIO $
-        randomPatternWain name u classifierSize
+        randomPatternWain name u classifierSize predictorSize
   -- Make the first generation a little hungry so they start learning
   -- immediately.
   let (agent', _) = adjustEnergy 0.8 agent
