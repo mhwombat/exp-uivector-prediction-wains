@@ -144,7 +144,6 @@ data Summary = Summary
     _rActualValue :: UIDouble,
     _rValuePredictionErr :: Double,
     _rRewardPredictionErr :: Double,
-    _rRewardCount :: Int,
     _rBirthCount :: Int,
     _rWeanCount :: Int,
     _rFlirtCount :: Int,
@@ -171,7 +170,6 @@ initSummary p = Summary
     _rActualValue = 0,
     _rValuePredictionErr = 0,
     _rRewardPredictionErr = 0,
-    _rRewardCount = 0,
     _rBirthCount = 0,
     _rWeanCount = 0,
     _rFlirtCount = 0,
@@ -198,7 +196,6 @@ summaryStats r =
     Stats.dStat "actual value" (view rActualValue r),
     Stats.dStat "value pred. err" (view rValuePredictionErr r),
     Stats.dStat "reward pred err" (view rRewardPredictionErr r),
-    Stats.dStat "reward count" (view rRewardCount r),
     Stats.iStat "bore" (view rBirthCount r),
     Stats.iStat "weaned" (view rWeanCount r),
     Stats.iStat "flirted" (view rFlirtCount r),
@@ -381,7 +378,6 @@ rewardPrediction = do
         ++ ", actual value was " ++ show actual
         ++ ", accuracy was " ++ show accuracy
         ++ ", reward is " ++ show deltaE
-      when (deltaE > 0) $ assign (summary . rRewardCount) 1
       assign (summary . rPredictedValue) predicted
       assign (summary . rActualValue) actual
       let err = abs $ uiToDouble actual - uiToDouble predicted

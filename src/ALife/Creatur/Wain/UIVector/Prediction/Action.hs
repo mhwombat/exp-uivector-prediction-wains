@@ -51,7 +51,7 @@ instance Random Action where
 
 predict :: Action -> UIDouble -> UIDouble
 predict (MultiplyBy z) x
-  = forceDoubleToUI $ (fromIntegral z :: Double) * (uiToDouble x)
+  = forceDoubleToUI $ ((fromIntegral z :: Double)/100) * (uiToDouble x)
 
 actionDiff :: Action -> Action -> Difference
 actionDiff (MultiplyBy x) (MultiplyBy y) = diffIntegral x y
