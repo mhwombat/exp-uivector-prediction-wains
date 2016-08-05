@@ -94,9 +94,9 @@ randomPatternWain
 randomPatternWain wName u classifierSize predictorSize = do
   let k = view U.uVectorLength u
   let fcp = RandomLearningParams
-              { _r0Range = view U.uPredictorR0Range u,
-                _rfRange = view U.uPredictorRfRange u,
-                _tfRange = view U.uPredictorTfRange u }
+              { _r0Range = view U.uClassifierR0Range u,
+                _rfRange = view U.uClassifierRfRange u,
+                _tfRange = view U.uClassifierTfRange u }
   fc <- randomLearningFunction fcp
   classifierThreshold <- getRandomR (view U.uClassifierThresholdRange u)
   ws <- (makeWeights . take (2*k)) <$> getRandoms

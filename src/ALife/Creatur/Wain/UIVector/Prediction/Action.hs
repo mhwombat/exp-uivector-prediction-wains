@@ -26,12 +26,12 @@ import ALife.Creatur.Wain.GeneticSOM (Difference)
 import ALife.Creatur.Wain.UnitInterval (UIDouble, forceDoubleToUI,
   uiToDouble, diffIntegral, adjustIntegral)
 import Data.Serialize (Serialize)
-import Data.Word (Word8)
+import Data.Word (Word16)
 import GHC.Generics (Generic)
 import System.Random (Random, random, randomR)
 
 -- The actions are listed in order of decreasing genetic dominance.
-data Action = MultiplyBy Word8
+data Action = Add Word16
   deriving (Show, Read, Eq, Ord, Bounded, Generic)
 
 instance Serialize Action
@@ -40,22 +40,23 @@ instance Diploid Action
 instance Pretty Action
 
 instance Enum Action where
-  toEnum n = MultiplyBy $ toEnum n
-  fromEnum (MultiplyBy x) = fromEnum x
+  toEnum n = Add $ toEnum n
+  fromEnum (Add x) = fromEnum x
 
 instance Random Action where
-  randomR (MultiplyBy x, MultiplyBy y) g = (MultiplyBy z, g')
+  randomR (Add x, Add y) g = (Add z, g')
     where (z, g') = randomR (x, y) g
-  random g = (MultiplyBy z, g')
+  random g = (Add z, g')
     where (z, g') = random g
 
 predict :: Action -> UIDouble -> UIDouble
-predict (MultiplyBy z) x
-  = forceDoubleToUI $ ((fromIntegral z :: Double)/100) * (uiToDouble x)
+predict (Add z) x
+  = forceDoubleToUI $ (fromIntegral z - 32768)*aBit + (uiToDouble x)
+  where aBit = 1/65535
 
 actionDiff :: Action -> Action -> Difference
-actionDiff (MultiplyBy x) (MultiplyBy y) = diffIntegral x y
+actionDiff (Add x) (Add y) = diffIntegral x y
 
 makeActionSimilar :: Action -> UIDouble -> Action -> Action
-makeActionSimilar (MultiplyBy x) r (MultiplyBy y)
-  = MultiplyBy $ adjustIntegral x r y
+makeActionSimilar (Add x) r (Add y)
+  = Add $ adjustIntegral x r y
