@@ -26,12 +26,12 @@ import ALife.Creatur.Wain.GeneticSOM (Difference)
 import ALife.Creatur.Wain.UnitInterval (UIDouble, forceDoubleToUI,
   uiToDouble, diffIntegral, adjustIntegral)
 import Data.Serialize (Serialize)
-import Data.Word (Word16)
+import Data.Word (Word8)
 import GHC.Generics (Generic)
 import System.Random (Random, random, randomR)
 
 -- The actions are listed in order of decreasing genetic dominance.
-data Action = Add Word16
+data Action = Add Word8
   deriving (Show, Read, Eq, Ord, Bounded, Generic)
 
 instance Serialize Action
@@ -51,8 +51,9 @@ instance Random Action where
 
 predict :: Action -> UIDouble -> UIDouble
 predict (Add z) x
-  = forceDoubleToUI $ (fromIntegral z - 32768)*aBit + (uiToDouble x)
-  where aBit = 1/65535
+  = forceDoubleToUI $ (fromIntegral z - mid)*aBit + (uiToDouble x)
+  where aBit = 1/255
+        mid  = 128
 
 actionDiff :: Action -> Action -> Difference
 actionDiff (Add x) (Add y) = diffIntegral x y
