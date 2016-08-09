@@ -31,7 +31,7 @@ import GHC.Generics (Generic)
 import System.Random (Random, random, randomR)
 
 maxIncrement :: Word16
-maxIncrement = 1024
+maxIncrement = 1023
 
 data Action = Add Word16
   deriving (Show, Read, Eq, Ord, Generic)
@@ -63,8 +63,8 @@ instance Random Action where
 predict :: Action -> UIDouble -> UIDouble
 predict (Add z) x
   = forceDoubleToUI $ (fromIntegral z - mid)*aBit + (uiToDouble x)
-  where aBit = 1/255
-        mid  = 128
+  where aBit = 2 / fromIntegral maxIncrement
+        mid  = fromIntegral maxIncrement / 2
 
 actionDiff :: Action -> Action -> Difference
 actionDiff (Add x) (Add y) = diffIntegral x y
