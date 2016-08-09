@@ -34,6 +34,9 @@ module ALife.Creatur.Wain.UIVector.Prediction.Universe
     uDataSource,
     uShowPredictorModels,
     uShowPredictions,
+    uShowScenarioReport,
+    uShowResponseReport,
+    uShowDecisionReport,
     uGenFmris,
     uSleepBetweenTasks,
     uVectorLength,
@@ -118,6 +121,9 @@ data Universe a = Universe
     _uDataSource :: DataSource,
     _uShowPredictorModels :: Bool,
     _uShowPredictions :: Bool,
+    _uShowScenarioReport :: Bool,
+    _uShowResponseReport :: Bool,
+    _uShowDecisionReport :: Bool,
     _uGenFmris :: Bool,
     _uSleepBetweenTasks :: Int,
     _uVectorLength :: Int,
@@ -198,6 +204,15 @@ cShowPredictorModels = requiredSetting "showPredictorModels"
 
 cShowPredictions :: Setting Bool
 cShowPredictions = requiredSetting "showPredictions"
+
+cShowScenarioReport :: Setting Bool
+cShowScenarioReport = requiredSetting "showScenarioReport"
+
+cShowResponseReport :: Setting Bool
+cShowResponseReport = requiredSetting "showResponseReport"
+
+cShowDecisionReport :: Setting Bool
+cShowDecisionReport = requiredSetting "showDecisionReport"
 
 cGenFmris :: Setting Bool
 cGenFmris = requiredSetting "genFMRIs"
@@ -321,6 +336,9 @@ config2Universe getSetting =
       _uDataSource = mkDataSource dataFile readCounterFile,
       _uShowPredictorModels = getSetting cShowPredictorModels,
       _uShowPredictions = getSetting cShowPredictions,
+      _uShowScenarioReport = getSetting cShowScenarioReport,
+      _uShowResponseReport = getSetting cShowResponseReport,
+      _uShowDecisionReport = getSetting cShowDecisionReport,
       _uGenFmris = getSetting cGenFmris,
       _uSleepBetweenTasks = getSetting cSleepBetweenTasks,
       _uVectorLength = n,

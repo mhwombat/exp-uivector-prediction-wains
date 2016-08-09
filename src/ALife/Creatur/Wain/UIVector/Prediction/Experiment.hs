@@ -32,7 +32,8 @@ import ALife.Creatur (agentId, isAlive, programVersion)
 import ALife.Creatur.Persistent (getPS, putPS)
 import ALife.Creatur.Task (checkPopSize, requestShutdown)
 import qualified ALife.Creatur.Wain as W
-import ALife.Creatur.Wain.Brain (makeBrain, predictor, classifier)
+import ALife.Creatur.Wain.Brain (makeBrain, predictor, classifier,
+  scenarioReport, responseReport, decisionReport)
 import ALife.Creatur.Wain.Checkpoint (enforceAll)
 import qualified ALife.Creatur.Wain.Classifier as Cl
 import ALife.Creatur.Wain.Muser (makeMuser)
@@ -390,17 +391,32 @@ chooseAction3
     -> StateT (U.Universe PatternWain) IO
         (UIDouble, Int, Response Action, PatternWain)
 chooseAction3 w vs = do
-  whenM (use U.uShowPredictorModels) $ describeModels w
-  let (lds, _, rplos, _, r, w')
+  whenM (use U.uShowPredictorModels) $ do
+    U.writeToLog "begin predictor models"
+    describeModels w
+    U.writeToLog "end predictor models"
+  let (lds, sps, rplos, aohs, r, w')
         = W.chooseAction [vs] w
   let (_, dObjNovelty, dObjNoveltyAdj)
           = analyseClassification lds w
-  whenM (use U.uShowPredictions) $ describeOutcomes w rplos
+  whenM (use U.uShowPredictions) $ do
+    U.writeToLog "begin predictions"
+    describeOutcomes w rplos
+    U.writeToLog "end predictions"
   U.writeToLog $ "To " ++ agentId w
     ++ ", the vector has adjusted novelty " ++ show dObjNoveltyAdj
-  -- mapM_ U.writeToLog $ scenarioReport sps
-  -- mapM_ U.writeToLog $ responseReport rplos
-  -- mapM_ U.writeToLog $ decisionReport aohs
+  whenM (use U.uShowScenarioReport) $ do
+    U.writeToLog "begin scenario report"
+    mapM_ U.writeToLog $ scenarioReport sps
+    U.writeToLog "end scenario report"
+  whenM (use U.uShowResponseReport) $ do
+    U.writeToLog "begin response report"
+    mapM_ U.writeToLog $ responseReport rplos
+    U.writeToLog "end response report"
+  whenM (use U.uShowDecisionReport) $ do
+    U.writeToLog "begin decision report"
+    mapM_ U.writeToLog $ decisionReport aohs
+    U.writeToLog "end decision report"
   U.writeToLog $ agentId w ++ " chooses to " ++ show (view action r)
     ++ " predicting the outcomes " ++ show (view outcomes r)
   return (dObjNovelty, dObjNoveltyAdj, r, w')
@@ -459,7 +475,7 @@ describeOutcomes
 describeOutcomes w = mapM_ (U.writeToLog . f)
   where f (r, _, l, _) = view W.name w ++ "'s predicted outcome of "
                      ++ show (view action r) ++ " is "
-                     ++ concatMap (printf "%.3f" . pm1ToDouble) (view outcomes r)
+                     ++ intercalate " " (map (printf "%.3f" . pm1ToDouble) (view outcomes r))
                      ++ " from model " ++ show l
 
 --
