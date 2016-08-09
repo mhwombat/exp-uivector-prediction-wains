@@ -48,7 +48,7 @@ import ALife.Creatur.Wain.Raw (raw)
 import ALife.Creatur.Wain.Response (Response, action, outcomes)
 import qualified ALife.Creatur.Wain.Statistics as Stats
 import ALife.Creatur.Wain.Statistics (summarise)
-import ALife.Creatur.Wain.UIVector.Prediction.Action (Action(..),
+import ALife.Creatur.Wain.UIVector.Prediction.Action (Action,
   predict)
 import ALife.Creatur.Wain.UIVector.Prediction.DataSource (endOfData,
   nextVector)

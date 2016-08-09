@@ -13,7 +13,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 module ALife.Creatur.Wain.UIVector.Prediction.Action
   (
-    Action(..),
+    Action,
     predict,
     actionDiff,
     makeActionSimilar
@@ -26,13 +26,20 @@ import ALife.Creatur.Wain.GeneticSOM (Difference)
 import ALife.Creatur.Wain.UnitInterval (UIDouble, forceDoubleToUI,
   uiToDouble, diffIntegral, adjustIntegral)
 import Data.Serialize (Serialize)
-import Data.Word (Word8)
+import Data.Word (Word16)
 import GHC.Generics (Generic)
 import System.Random (Random, random, randomR)
 
--- The actions are listed in order of decreasing genetic dominance.
-data Action = Add Word8
-  deriving (Show, Read, Eq, Ord, Bounded, Generic)
+maxIncrement :: Word16
+maxIncrement = 1024
+
+data Action = Add Word16
+  deriving (Show, Read, Eq, Ord, Generic)
+
+mkAction :: Word16 -> Action
+mkAction x
+  | x > maxIncrement = error "argument too big"
+  | otherwise        = Add x
 
 instance Serialize Action
 instance Genetic Action
@@ -40,8 +47,12 @@ instance Diploid Action
 instance Pretty Action
 
 instance Enum Action where
-  toEnum n = Add $ toEnum n
+  toEnum n = mkAction $ toEnum n
   fromEnum (Add x) = fromEnum x
+
+instance Bounded Action where
+  minBound = Add 0
+  maxBound = Add maxIncrement
 
 instance Random Action where
   randomR (Add x, Add y) g = (Add z, g')
