@@ -39,7 +39,8 @@ import qualified ALife.Creatur.Wain.Classifier as Cl
 import ALife.Creatur.Wain.Muser (makeMuser)
 import qualified ALife.Creatur.Wain.Predictor as P
 import ALife.Creatur.Wain.GeneticSOM (RandomLearningParams(..),
-  randomLearningFunction, schemaQuality, modelMap, numModels)
+  randomLearningFunction, schemaQuality, modelMap, numModels,
+  tweaker)
 import ALife.Creatur.Wain.PlusMinusOne (PM1Double, pm1ToDouble)
 import ALife.Creatur.Wain.PersistentStatistics (updateStats, readStats,
   clearStats)
@@ -60,7 +61,7 @@ import qualified ALife.Creatur.Wain.UIVector.Wain as UW
 import ALife.Creatur.Wain.UnitInterval (UIDouble, uiToDouble,
   doubleToUI)
 import ALife.Creatur.Wain.Util (unitInterval)
-import ALife.Creatur.Wain.Weights (makeWeights)
+import ALife.Creatur.Wain.Weights (makeWeights, weightAt)
 import Control.Conditional (whenM)
 import Control.Lens hiding (universe)
 import Control.Monad (when, unless)
@@ -286,7 +287,7 @@ run' = do
   a <- use subject
   report $ "---------- " ++ agentId a ++ "'s turn ----------"
   report $ "At beginning of turn, " ++ agentId a
-    ++ "'s summary: " ++ pretty (Stats.stats a)
+    ++ "'s summary: " ++ pretty (customStats a)
   rewardPrediction
   autoPopControl <- use (universe . U.uPopControl)
   when autoPopControl applyPopControl
@@ -302,13 +303,23 @@ run' = do
   updateChildren
   runMetabolism
   killIfTooOld
-  agentStats <- ((Stats.stats a' ++) . summaryStats) <$> use summary
+  agentStats <- ((customStats a' ++) . summaryStats) <$> use summary
   report $ "At end of turn, " ++ agentId a
     ++ "'s summary: " ++ pretty agentStats
   rsf <- use (universe . U.uRawStatsFile)
   zoom universe $ writeRawStats (agentId a) rsf agentStats
   sf <- use (universe . U.uStatsFile)
   zoom universe $ updateStats agentStats sf
+
+customStats :: PatternWain -> [Stats.Statistic]
+customStats w = Stats.stats w
+  ++ [
+       Stats.dStat "predictorActionWeight" . uiToDouble $
+         ws `weightAt` 0,
+       Stats.dStat "predictorScenarioWeight" . uiToDouble $
+         ws `weightAt` 1
+     ]
+  where (ResponseTweaker ws) = view (W.brain . predictor . tweaker) w
 
 fillInSummary :: Summary -> Summary
 fillInSummary s = s

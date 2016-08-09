@@ -24,7 +24,7 @@ import ALife.Creatur.Genetics.Diploid (Diploid)
 import ALife.Creatur.Wain.Pretty (Pretty)
 import ALife.Creatur.Wain.GeneticSOM (Difference)
 import ALife.Creatur.Wain.UnitInterval (UIDouble, forceDoubleToUI,
-  uiToDouble, diffIntegral, adjustIntegral)
+  uiToDouble, doubleToUI, adjustIntegral)
 import Data.Serialize (Serialize)
 import Data.Word (Word16)
 import GHC.Generics (Generic)
@@ -67,7 +67,9 @@ predict (Add z) x
         mid  = fromIntegral maxIncrement / 2
 
 actionDiff :: Action -> Action -> Difference
-actionDiff (Add x) (Add y) = diffIntegral x y
+actionDiff (Add x) (Add y)
+  = doubleToUI $
+      abs (fromIntegral x - fromIntegral y) / fromIntegral maxIncrement
 
 makeActionSimilar :: Action -> UIDouble -> Action -> Action
 makeActionSimilar (Add x) r (Add y)
