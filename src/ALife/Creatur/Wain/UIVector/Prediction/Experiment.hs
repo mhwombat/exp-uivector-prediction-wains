@@ -481,10 +481,10 @@ describeModels w = mapM_ (U.writeToLog . f) ms
                      ++ "=" ++ pretty r
 
 describeOutcomes
-  :: PatternWain -> [(Response Action, UIDouble, P.Label, [PM1Double])]
+  :: PatternWain -> [(Response Action, UIDouble, UIDouble, P.Label, [PM1Double])]
     -> StateT (U.Universe PatternWain) IO ()
 describeOutcomes w = mapM_ (U.writeToLog . f)
-  where f (r, _, l, _) = view W.name w ++ "'s predicted outcome of "
+  where f (r, _, _, l, _) = view W.name w ++ "'s predicted outcome of "
                      ++ show (view action r) ++ " is "
                      ++ intercalate " " (map (printf "%.3f" . pm1ToDouble) (view outcomes r))
                      ++ " from model " ++ show l
