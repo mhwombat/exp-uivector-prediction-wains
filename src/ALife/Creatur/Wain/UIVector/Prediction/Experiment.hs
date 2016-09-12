@@ -111,7 +111,7 @@ randomPatternWain wName u classifierSize predictorSize = do
   let p = P.buildPredictor fd predictorSize predictorThreshold rtw
   hw <- (makeWeights . take 4) <$> getRandomRs unitInterval
   t <- getRandom
-  rw <- (makeWeights . take 4) <$> getRandomRs unitInterval
+  rw <- (makeWeights . take 2) <$> getRandomRs unitInterval
   ddt <- getRandomR (view U.uDecisionDiffThresholdRange u)
   dos <- take 4 <$> getRandomRs (view U.uDefaultOutcomeRange u)
   ios <- take 4 <$> getRandomRs (view U.uImprintOutcomeRange u)
