@@ -33,6 +33,9 @@ module ALife.Creatur.Wain.UIVector.Prediction.Universe
     uRawStatsFile,
     uDataSource,
     uShowPredictorModels,
+    uShowPredictions,
+    uShowScenarioReport,
+    uShowResponseReport,
     uShowDecisionReport,
     uGenFmris,
     uSleepBetweenTasks,
@@ -61,10 +64,11 @@ module ALife.Creatur.Wain.UIVector.Prediction.Universe
     uPredictorR0Range,
     uPredictorRfRange,
     uPredictorTfRange,
-    uDecisionDiffThresholdRange,
     uDefaultOutcomeRange,
+    uStrictnessRange,
     uImprintOutcomeRange,
     uReinforcementDeltasRange,
+    uDepthRange,
     uCheckpoints,
     uCurrVector,
     uPrevVector,
@@ -101,7 +105,7 @@ import Control.Exception (SomeException, try)
 import Control.Lens hiding (Setting)
 import Data.AppSettings (Setting(..), GetSetting(..),
   FileLocation(Path), readSettings)
-import Data.Word (Word16, Word64)
+import Data.Word (Word8, Word16, Word64)
 import System.Directory (makeRelativeToCurrentDirectory)
 
 data Universe a = Universe
@@ -116,6 +120,9 @@ data Universe a = Universe
     _uRawStatsFile :: FilePath,
     _uDataSource :: DataSource,
     _uShowPredictorModels :: Bool,
+    _uShowPredictions :: Bool,
+    _uShowScenarioReport :: Bool,
+    _uShowResponseReport :: Bool,
     _uShowDecisionReport :: Bool,
     _uGenFmris :: Bool,
     _uSleepBetweenTasks :: Int,
@@ -144,10 +151,11 @@ data Universe a = Universe
     _uPredictorR0Range :: (UIDouble, UIDouble),
     _uPredictorRfRange :: (UIDouble, UIDouble),
     _uPredictorTfRange :: (Word64, Word64),
-    _uDecisionDiffThresholdRange :: (UIDouble, UIDouble),
     _uDefaultOutcomeRange :: (PM1Double, PM1Double),
+    _uStrictnessRange :: (Word64, Word64),
     _uImprintOutcomeRange :: (PM1Double, PM1Double),
     _uReinforcementDeltasRange :: (PM1Double, PM1Double),
+    _uDepthRange :: (Word8, Word8),
     _uCheckpoints :: [CP.Checkpoint],
     _uCurrVector :: Persistent [UIDouble],
     _uPrevVector :: Persistent [UIDouble],
@@ -193,6 +201,15 @@ cCacheSize = requiredSetting "cacheSize"
 
 cShowPredictorModels :: Setting Bool
 cShowPredictorModels = requiredSetting "showPredictorModels"
+
+cShowPredictions :: Setting Bool
+cShowPredictions = requiredSetting "showPredictions"
+
+cShowScenarioReport :: Setting Bool
+cShowScenarioReport = requiredSetting "showScenarioReport"
+
+cShowResponseReport :: Setting Bool
+cShowResponseReport = requiredSetting "showResponseReport"
 
 cShowDecisionReport :: Setting Bool
 cShowDecisionReport = requiredSetting "showDecisionReport"
@@ -275,18 +292,20 @@ cPredictorRfRange = requiredSetting "predictorRfRange"
 cPredictorTfRange :: Setting (Word64, Word64)
 cPredictorTfRange = requiredSetting "predictorTfRange"
 
-cDecisionDiffThresholdRange :: Setting (UIDouble, UIDouble)
-cDecisionDiffThresholdRange
-  = requiredSetting "decisionDiffThresholdRange"
-
 cDefaultOutcomeRange :: Setting (PM1Double, PM1Double)
 cDefaultOutcomeRange = requiredSetting "defaultOutcomeRange"
+
+cStrictnessRange :: Setting (Word64, Word64)
+cStrictnessRange = requiredSetting "strictnessRange"
 
 cImprintOutcomeRange :: Setting (PM1Double, PM1Double)
 cImprintOutcomeRange = requiredSetting "imprintOutcomeRange"
 
 cReinforcementDeltasRange :: Setting (PM1Double, PM1Double)
 cReinforcementDeltasRange = requiredSetting "reinforcementDeltasRange"
+
+cDepthRange :: Setting (Word8, Word8)
+cDepthRange = requiredSetting "depthRange"
 
 cCheckpoints :: Setting [CP.Checkpoint]
 cCheckpoints = requiredSetting "checkpoints"
@@ -316,6 +335,9 @@ config2Universe getSetting =
       _uRawStatsFile = workDir ++ "/rawStatsFile",
       _uDataSource = mkDataSource dataFile readCounterFile,
       _uShowPredictorModels = getSetting cShowPredictorModels,
+      _uShowPredictions = getSetting cShowPredictions,
+      _uShowScenarioReport = getSetting cShowScenarioReport,
+      _uShowResponseReport = getSetting cShowResponseReport,
       _uShowDecisionReport = getSetting cShowDecisionReport,
       _uGenFmris = getSetting cGenFmris,
       _uSleepBetweenTasks = getSetting cSleepBetweenTasks,
@@ -346,11 +368,11 @@ config2Universe getSetting =
       _uPredictorR0Range = getSetting cPredictorR0Range,
       _uPredictorRfRange = getSetting cPredictorRfRange,
       _uPredictorTfRange = getSetting cPredictorTfRange,
-      _uDecisionDiffThresholdRange
-        = getSetting cDecisionDiffThresholdRange,
       _uDefaultOutcomeRange = getSetting cDefaultOutcomeRange,
+      _uStrictnessRange = getSetting cStrictnessRange,
       _uImprintOutcomeRange = getSetting cImprintOutcomeRange,
       _uReinforcementDeltasRange = getSetting cReinforcementDeltasRange,
+      _uDepthRange = getSetting cDepthRange,
       _uCheckpoints = getSetting cCheckpoints,
       _uCurrVector = mkPersistent zeroes (workDir ++ "/currVector"),
       _uPrevVector = mkPersistent zeroes (workDir ++ "/prevVector"),

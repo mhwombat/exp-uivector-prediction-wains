@@ -33,13 +33,15 @@ import ALife.Creatur.Persistent (getPS, putPS)
 import ALife.Creatur.Task (checkPopSize, requestShutdown)
 import qualified ALife.Creatur.Wain as W
 import ALife.Creatur.Wain.Brain (makeBrain, predictor, classifier,
-  decisionReport)
+  scenarioReport, responseReport, decisionReport)
 import ALife.Creatur.Wain.Checkpoint (enforceAll)
 import qualified ALife.Creatur.Wain.Classifier as Cl
+import ALife.Creatur.Wain.Muser (makeMuser)
 import qualified ALife.Creatur.Wain.Predictor as P
 import ALife.Creatur.Wain.GeneticSOM (RandomLearningParams(..),
   randomLearningFunction, schemaQuality, modelMap, numModels,
   tweaker)
+import ALife.Creatur.Wain.PlusMinusOne (PM1Double, pm1ToDouble)
 import ALife.Creatur.Wain.PersistentStatistics (updateStats, readStats,
   clearStats)
 import qualified ALife.Creatur.Wain.UIVector.Prediction.Universe as U
@@ -49,7 +51,7 @@ import ALife.Creatur.Wain.Response (Response, action, outcomes)
 import qualified ALife.Creatur.Wain.Statistics as Stats
 import ALife.Creatur.Wain.Statistics (summarise)
 import ALife.Creatur.Wain.UIVector.Prediction.Action (Action,
-  predict, actionDiff)
+  predict)
 import ALife.Creatur.Wain.UIVector.Prediction.DataSource (endOfData,
   nextVector)
 import ALife.Creatur.Wain.UIVector.Prediction.ResponseTweaker
@@ -75,6 +77,7 @@ import Data.Word (Word64)
 import Paths_exp_uivector_prediction_wains (version)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath (dropFileName)
+import Text.Printf (printf)
 
 versionInfo :: String
 versionInfo
@@ -111,12 +114,13 @@ randomPatternWain wName u classifierSize predictorSize = do
   let p = P.buildPredictor fd predictorSize predictorThreshold rtw
   hw <- (makeWeights . take 4) <$> getRandomRs unitInterval
   t <- getRandom
-  rw <- (makeWeights . take 2) <$> getRandomRs unitInterval
-  ddt <- getRandomR (view U.uDecisionDiffThresholdRange u)
+  s <- getRandomR (view U.uStrictnessRange u)
+  dp <- getRandomR $ view U.uDepthRange u
   dos <- take 4 <$> getRandomRs (view U.uDefaultOutcomeRange u)
+  let (Right mr) = makeMuser dos dp
   ios <- take 4 <$> getRandomRs (view U.uImprintOutcomeRange u)
   rds <- take 4 <$> getRandomRs (view U.uReinforcementDeltasRange u)
-  let (Right wBrain) = makeBrain c p hw t rw ddt dos ios rds
+  let (Right wBrain) = makeBrain c mr p hw t s ios rds
   wDevotion <- getRandomR . view U.uDevotionRange $ u
   wAgeOfMaturity <- getRandomR . view U.uMaturityRange $ u
   let wPassionDelta = 0
@@ -402,15 +406,26 @@ chooseAction3 w vs = do
     U.writeToLog "begin predictor models"
     describeModels w
     U.writeToLog "end predictor models"
-  let (ldss, xss, r, w') = W.chooseAction actionDiff [vs] w
+  let (ldss, sps, rplos, aohs, r, w') = W.chooseAction [vs] w
   let (_, dObjNovelty, dObjNoveltyAdj)
           = analyseClassification ldss w
+  whenM (use U.uShowPredictions) $ do
+    U.writeToLog "begin predictions"
+    describeOutcomes w rplos
+    U.writeToLog "end predictions"
   U.writeToLog $ "To " ++ agentId w
     ++ ", the vector has adjusted novelty " ++ show dObjNoveltyAdj
+  whenM (use U.uShowScenarioReport) $ do
+    U.writeToLog "begin scenario report"
+    mapM_ U.writeToLog $ scenarioReport sps
+    U.writeToLog "end scenario report"
+  whenM (use U.uShowResponseReport) $ do
+    U.writeToLog "begin response report"
+    mapM_ U.writeToLog $ responseReport rplos
+    U.writeToLog "end response report"
   whenM (use U.uShowDecisionReport) $ do
     U.writeToLog "begin decision report"
-    let msgs = concatMap decisionReport xss
-    mapM_ U.writeToLog msgs
+    mapM_ U.writeToLog $ decisionReport aohs
     U.writeToLog "end decision report"
   U.writeToLog $ agentId w ++ " chooses to " ++ show (view action r)
     ++ " predicting the outcomes " ++ show (view outcomes r)
@@ -464,14 +479,14 @@ describeModels w = mapM_ (U.writeToLog . f) ms
         f (l, r) = view W.name w ++ "'s predictor model " ++ show l
                      ++ "=" ++ pretty r
 
--- describeOutcomes
---   :: PatternWain -> [(Response Action, UIDouble, UIDouble, P.Label, [PM1Double])]
---     -> StateT (U.Universe PatternWain) IO ()
--- describeOutcomes w = mapM_ (U.writeToLog . f)
---   where f (r, _, _, l, _) = view W.name w ++ "'s predicted outcome of "
---                      ++ show (view action r) ++ " is "
---                      ++ intercalate " " (map (printf "%.3f" . pm1ToDouble) (view outcomes r))
---                      ++ " from model " ++ show l
+describeOutcomes
+  :: PatternWain -> [(Response Action, UIDouble, UIDouble, P.Label, [PM1Double])]
+    -> StateT (U.Universe PatternWain) IO ()
+describeOutcomes w = mapM_ (U.writeToLog . f)
+  where f (r, _, _, l, _) = view W.name w ++ "'s predicted outcome of "
+                     ++ show (view action r) ++ " is "
+                     ++ intercalate " " (map (printf "%.3f" . pm1ToDouble) (view outcomes r))
+                     ++ " from model " ++ show l
 
 --
 -- Utility functions
