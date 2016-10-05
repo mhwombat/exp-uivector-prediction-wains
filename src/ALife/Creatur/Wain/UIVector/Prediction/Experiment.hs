@@ -51,7 +51,7 @@ import ALife.Creatur.Wain.Response (Response, action, outcomes)
 import qualified ALife.Creatur.Wain.Statistics as Stats
 import ALife.Creatur.Wain.Statistics (summarise)
 import ALife.Creatur.Wain.UIVector.Prediction.Action (Action,
-  predict)
+  predict, postdict)
 import ALife.Creatur.Wain.UIVector.Prediction.DataSource (endOfData,
   nextVector)
 import ALife.Creatur.Wain.UIVector.Prediction.ResponseTweaker
@@ -601,7 +601,12 @@ letSubjectReflect wBefore r = do
   w <- use subject
   p <- zoom (universe . U.uPrevVector) getPS
   let (w', err) = W.reflect [p] r wBefore w
-  assign subject w'
+  v1 <- zoom (universe . U.uPrevVector) getPS
+  let x1 = head v1
+  x2 <- head <$> zoom (universe . U.uCurrVector) getPS
+  let a = postdict x1 x2
+  let (_, _, _, _, w'') = W.imprint [v1] a w'
+  assign subject w''
   assign (summary . rRewardPredictionErr) err
 
 writeRawStats

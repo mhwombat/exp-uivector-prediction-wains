@@ -14,7 +14,9 @@
 module ALife.Creatur.Wain.UIVector.Prediction.Action
   (
     Action,
+    mkAction,
     predict,
+    postdict,
     actionDiff,
     makeActionSimilar
   ) where
@@ -60,11 +62,23 @@ instance Random Action where
   random g = (Add z, g')
     where (z, g') = random g
 
+-- predictOld :: Action -> UIDouble -> UIDouble
+-- predictOld (Add z) x
+--   = forceDoubleToUI $ (fromIntegral z - mid)*aBit + (uiToDouble x)
+--   where aBit = 2 / fromIntegral maxIncrement
+--         mid  = fromIntegral maxIncrement / 2
+
 predict :: Action -> UIDouble -> UIDouble
 predict (Add z) x
-  = forceDoubleToUI $ (fromIntegral z - mid)*aBit + (uiToDouble x)
-  where aBit = 2 / fromIntegral maxIncrement
-        mid  = fromIntegral maxIncrement / 2
+  = forceDoubleToUI $ uiToDouble x + delta
+  where delta = (fromIntegral z)*2/m - 1
+        m = fromIntegral maxIncrement
+
+postdict :: UIDouble -> UIDouble -> Action
+postdict x1 x2 = Add z
+  where z = round $ (delta + 1)*m/2
+        delta = uiToDouble x2 - uiToDouble x1
+        m = fromIntegral maxIncrement
 
 actionDiff :: Action -> Action -> Difference
 actionDiff (Add x) (Add y)

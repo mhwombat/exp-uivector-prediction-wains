@@ -190,7 +190,7 @@ Test-suite exp-uivector-prediction-tests
                     creatur ==5.9.*,
                     creatur-uivector-wains ==1.2.*,
                     creatur-wains ==8.7.*,
-                    creatur-wains-test-utils ==1.0.*,
+                    creatur-wains-test-utils ==1.1.*,
                     deepseq ==1.4.*,
                     directory ==1.2.*,
                     filepath ==1.4.*,

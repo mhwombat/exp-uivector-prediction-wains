@@ -15,9 +15,13 @@ module ALife.Creatur.Wain.UIVector.Prediction.ActionQC
     test
   ) where
 
-import ALife.Creatur.Wain.UIVector.Prediction.Action
-import ALife.Creatur.Wain.UIVector.Prediction.TestUtils (prop_serialize_round_trippable,
+import ALife.Creatur.Wain.TestUtils (prop_serialize_round_trippable,
   prop_genetic_round_trippable, prop_diploid_identity)
+import ALife.Creatur.Wain.UIVector.Prediction.Action
+-- import ALife.Creatur.Wain.UIVector.Prediction.TestUtils
+--   (prop_serialize_round_trippable, prop_genetic_round_trippable,
+--     prop_diploid_identity)
+import ALife.Creatur.Wain.UnitInterval (UIDouble)
 import Test.Framework (Test, testGroup)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Test.QuickCheck
@@ -36,6 +40,12 @@ prop_action_diff_can_be_one :: Property
 prop_action_diff_can_be_one
   = property $ actionDiff minBound maxBound == 1
 
+prop_predict_consistent_with_postdict :: UIDouble -> Action -> Property
+prop_predict_consistent_with_postdict x1 a =
+  x2 > 0 && x2 < 1 ==> a' == a
+  where x2 = predict a x1
+        a' = postdict x1 x2
+
 test :: Test
 test = testGroup "ALife.Creatur.Wain.UIVector.Prediction.ActionQC"
   [
@@ -50,5 +60,7 @@ test = testGroup "ALife.Creatur.Wain.UIVector.Prediction.ActionQC"
     testProperty "prop_action_diff_can_be_zero"
       prop_action_diff_can_be_zero,
     testProperty "prop_action_diff_can_be_one"
-      prop_action_diff_can_be_one
+      prop_action_diff_can_be_one,
+    testProperty "prop_predict_consistent_with_postdict"
+      prop_predict_consistent_with_postdict
   ]
