@@ -49,7 +49,7 @@ module ALife.Creatur.Wain.UIVector.Prediction.Universe
     uEnergyBudget,
     uAllowedPopulationRange,
     uPopControl,
-    uAccuracyMargin,
+    uAccuracyPower,
     uAccuracyDeltaE,
     uBaseMetabolismDeltaE,
     uEnergyCostPerClassifierModel,
@@ -100,7 +100,7 @@ import ALife.Creatur.Wain.UIVector.Prediction.DataSource (DataSource,
   mkDataSource)
 import ALife.Creatur.Wain.Response (Response)
 import ALife.Creatur.Wain.PlusMinusOne (PM1Double)
-import ALife.Creatur.Wain.UnitInterval (UIDouble, doubleToUI)
+import ALife.Creatur.Wain.UnitInterval (UIDouble)
 import Control.Exception (SomeException, try)
 import Control.Lens hiding (Setting)
 import Data.AppSettings (Setting(..), GetSetting(..),
@@ -136,7 +136,7 @@ data Universe a = Universe
     _uEnergyBudget :: Double,
     _uAllowedPopulationRange :: (Int, Int),
     _uPopControl :: Bool,
-    _uAccuracyMargin :: UIDouble,
+    _uAccuracyPower :: Int,
     _uAccuracyDeltaE :: Double,
     _uBaseMetabolismDeltaE :: Double,
     _uEnergyCostPerClassifierModel :: Double,
@@ -249,8 +249,8 @@ cAllowedPopulationRange = requiredSetting "allowedPopRange"
 cPopControl :: Setting Bool
 cPopControl = requiredSetting "popControl"
 
-cAccuracyMargin :: Setting Double
-cAccuracyMargin = requiredSetting "accuracyMargin"
+cAccuracyPower :: Setting Int
+cAccuracyPower = requiredSetting "accuracyFactor"
 
 cAccuracyDeltaE :: Setting Double
 cAccuracyDeltaE = requiredSetting "accuracyDeltaE"
@@ -351,7 +351,7 @@ config2Universe getSetting =
       _uEnergyBudget = fromIntegral p0 * 0.5,
       _uAllowedPopulationRange = (a', b'),
       _uPopControl = getSetting cPopControl,
-      _uAccuracyMargin = doubleToUI $ getSetting cAccuracyMargin,
+      _uAccuracyPower = getSetting cAccuracyPower,
       _uAccuracyDeltaE = getSetting cAccuracyDeltaE,
       _uBaseMetabolismDeltaE = getSetting cBaseMetabolismDeltaE,
       _uEnergyCostPerClassifierModel

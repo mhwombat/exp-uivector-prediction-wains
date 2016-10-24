@@ -380,10 +380,11 @@ rewardPrediction = do
     Nothing ->
       zoom universe . U.writeToLog $ "First turn for " ++ agentId a
     Just (r, predicted) -> do
+      accuracyPower <- use (universe . U.uAccuracyPower)
       accuracyDeltaE <- use (universe . U.uAccuracyDeltaE)
       actual <- head <$> zoom (universe . U.uCurrVector) getPS
       let accuracy = 1 - abs(uiToDouble actual - uiToDouble predicted)
-      let deltaE = accuracy * accuracyDeltaE
+      let deltaE = (accuracy^accuracyPower) * accuracyDeltaE
       adjustWainEnergy subject deltaE rPredDeltaE "prediction"
       zoom universe . U.writeToLog $
         agentId a ++ " predicted " ++ show predicted
