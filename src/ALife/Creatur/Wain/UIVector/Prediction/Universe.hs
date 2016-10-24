@@ -250,7 +250,7 @@ cPopControl :: Setting Bool
 cPopControl = requiredSetting "popControl"
 
 cAccuracyPower :: Setting Int
-cAccuracyPower = requiredSetting "accuracyFactor"
+cAccuracyPower = requiredSetting "accuracyPower"
 
 cAccuracyDeltaE :: Setting Double
 cAccuracyDeltaE = requiredSetting "accuracyDeltaE"
