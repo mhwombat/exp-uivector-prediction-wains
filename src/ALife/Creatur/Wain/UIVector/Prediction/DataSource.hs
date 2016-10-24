@@ -28,7 +28,13 @@ data DataSource = DataSource
     currentTime :: Persistent Int,
     fileHandle :: Handle,
     fileName :: FilePath
-  } deriving Show
+  }
+
+instance Show DataSource where
+  show d = "DataSource {initialised = " ++ show (initialised d)
+           ++ ", currentTime = " ++ show (currentTime d)
+           ++ ", fileHandle = <not shown>"
+           ++ ", fileName = " ++ show (fileName d)
 
 mkDataSource :: FilePath -> FilePath -> DataSource
 mkDataSource dataFile counterFile = DataSource False counter undefined dataFile
