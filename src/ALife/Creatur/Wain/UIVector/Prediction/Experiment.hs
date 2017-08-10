@@ -41,7 +41,6 @@ import qualified ALife.Creatur.Wain.Predictor as P
 import ALife.Creatur.Wain.GeneticSOM (RandomLearningParams(..),
   randomLearningFunction, schemaQuality, modelMap, numModels,
   tweaker)
-import qualified ALife.Creatur.Wain.Muser as M
 import ALife.Creatur.Wain.PlusMinusOne (PM1Double, pm1ToDouble)
 import ALife.Creatur.Wain.PersistentStatistics (updateStats, readStats,
   clearStats)
@@ -49,7 +48,7 @@ import qualified ALife.Creatur.Wain.UIVector.Prediction.Universe as U
 import ALife.Creatur.Wain.Pretty (pretty)
 import ALife.Creatur.Wain.Raw (raw)
 import ALife.Creatur.Wain.Response (Response, action, outcomes)
-import ALife.Creatur.Wain.SimpleMuser (SimpleMuser, makeMuser, generateResponses, defaultOutcomes)
+import ALife.Creatur.Wain.SimpleMuser (SimpleMuser, makeMuser)
 import qualified ALife.Creatur.Wain.Statistics as Stats
 import ALife.Creatur.Wain.Statistics (summarise)
 import ALife.Creatur.Wain.UIVector.Prediction.Action (Action,
@@ -81,11 +80,6 @@ import System.Directory (createDirectoryIfMissing)
 import System.FilePath (dropFileName)
 import Text.Printf (printf)
 
-instance M.Muser SimpleMuser where
-  type Action SimpleMuser = Action
-  generateResponses = generateResponses
-  defaultOutcomes = view defaultOutcomes
-  
 versionInfo :: String
 versionInfo
   = "exp-prediction-wains-" ++ showVersion version
@@ -94,7 +88,8 @@ versionInfo
       ++ ", " ++ ALife.Creatur.programVersion
 
 type PatternWain
-  = W.Wain [UIDouble] PatternTweaker ResponseTweaker SimpleMuser Action
+  = W.Wain [UIDouble] PatternTweaker ResponseTweaker
+      (SimpleMuser Action) Action
 
 randomPatternWain
   :: RandomGen r
