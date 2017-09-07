@@ -245,20 +245,25 @@ evaluateErrors = do
   ps <- fmap (map thirdOfThree) $ zoom U.uNewPredictions getPS
   when (not . null $ ps) $ do
     let actual = head xs
+    U.writeToLog $ "DEBUG actual=" ++ show actual
     let popPrediction = mean ps
+    U.writeToLog $ "DEBUG popPrediction=" ++ show popPrediction
     let popError = abs (actual - popPrediction)
+    U.writeToLog $ "actual=" ++ show actual
+      ++ " pop. prediction=" ++ show popPrediction
+      ++ " pop. error=" ++ show popError
     let es = map (abs . (actual -)) ps
+    U.writeToLog $ "DEBUG es=" ++ show es
     let maxIndivError = maximum es
+    U.writeToLog $ "DEBUG maxIndivError=" ++ show maxIndivError
     let minIndivError = minimum es
+    U.writeToLog $ "DEBUG minIndivError=" ++ show minIndivError
     zoom U.uMaxIndivError $ putPS maxIndivError
     zoom U.uMinIndivError $ putPS minIndivError
     -- debug <- zoom U.uNewPredictions getPS
     -- U.writeToLog $ "DEBUG debug=" ++ show debug
     -- U.writeToLog $ "ps=" ++ show ps
     -- U.writeToLog $ "es=" ++ show es
-    U.writeToLog $ "actual=" ++ show actual
-      ++ " pop. prediction=" ++ show popPrediction
-      ++ " pop. error=" ++ show popError
     U.writeToLog $ "max individual error=" ++ show maxIndivError
       ++ " min individual error=" ++ show minIndivError
 
