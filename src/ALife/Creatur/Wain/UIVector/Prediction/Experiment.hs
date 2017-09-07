@@ -223,6 +223,12 @@ scaledDelta x y = doubleToUI $ (uiToDouble x - uiToDouble y)/2 + 0.5
 startRound :: StateT (U.Universe PatternWain) IO ()
 startRound = do
   whenM (zoom U.uDataSource endOfData) $ requestShutdown "end of data"
+  updateVector
+  evaluateErrors
+  rotatePredictions
+
+updateVector :: StateT (U.Universe PatternWain) IO ()
+updateVector = do
   xsOld <- zoom U.uCurrVector getPS
   xs <- zoom U.uDataSource nextVector
   let deltas = zipWith scaledDelta xs xsOld
@@ -232,16 +238,35 @@ startRound = do
   zoom U.uCurrVector $ putPS (xs ++ deltas)
   U.writeToLog $ "Current data: " ++ show xs
   U.writeToLog $ "Deltas: " ++ show deltas
-  let actual = head xs
+
+evaluateErrors :: StateT (U.Universe PatternWain) IO ()
+evaluateErrors = do
+  xs <- zoom U.uCurrVector getPS
+  ps <- fmap (map thirdOfThree) $ zoom U.uNewPredictions getPS
+  when (not . null $ ps) $ do
+    let actual = head xs
+    let popPrediction = mean ps
+    let popError = abs (actual - popPrediction)
+    let es = map (uiToDouble . abs . (actual -)) ps
+    let maxIndivError = maximum es
+    let minIndivError = minimum es
+    zoom U.uMaxIndivError $ putPS maxIndivError
+    zoom U.uMinIndivError $ putPS minIndivError
+    -- debug <- zoom U.uNewPredictions getPS
+    -- U.writeToLog $ "DEBUG debug=" ++ show debug
+    -- U.writeToLog $ "ps=" ++ show ps
+    -- U.writeToLog $ "es=" ++ show es
+    U.writeToLog $ "actual=" ++ show actual
+      ++ " pop. prediction=" ++ show popPrediction
+      ++ " pop. error=" ++ show popError
+    U.writeToLog $ "max individual error=" ++ show maxIndivError
+      ++ " min individual error=" ++ show minIndivError
+
+rotatePredictions :: StateT (U.Universe PatternWain) IO ()
+rotatePredictions = do
   ps <- zoom U.uNewPredictions getPS
   zoom U.uPreviousPredictions $ putPS ps
   zoom U.uNewPredictions $ putPS []
-  when (not . null $ ps) $ do
-    let predicted = mean . map (uiToDouble . thirdOfThree) $ ps
-    let err = abs (uiToDouble actual - predicted)
-    U.writeToLog $ "actual=" ++ show actual
-      ++ " predicted=" ++ show predicted
-      ++ " err=" ++ show err
 
 finishRound :: StateT (U.Universe PatternWain) IO ()
 finishRound = do
@@ -382,20 +407,27 @@ rewardPrediction = do
     Nothing ->
       zoom universe . U.writeToLog $ "First turn for " ++ agentId a
     Just (r, predicted) -> do
-      accuracyPower <- use (universe . U.uAccuracyPower)
-      accuracyDeltaE <- use (universe . U.uAccuracyDeltaE)
       actual <- head <$> zoom (universe . U.uCurrVector) getPS
-      let accuracy = 1 - abs(uiToDouble actual - uiToDouble predicted)
-      let deltaE = (accuracy^accuracyPower) * accuracyDeltaE
+      let err = abs $ uiToDouble actual - uiToDouble predicted
+      eMax <- zoom (universe . U.uMaxIndivError) getPS
+      eMin <- zoom (universe . U.uMinIndivError) getPS
+      accuracyDeltaE <- use (universe . U.uAccuracyDeltaE)
+      accuracyPower <- use (universe . U.uAccuracyPower)
+      let relAccuracy = (eMax - err)/(eMax - eMin)
+      let deltaE = if eMax == eMin
+                      then accuracyDeltaE
+                      else accuracyDeltaE * (relAccuracy^accuracyPower)
       adjustWainEnergy subject deltaE rPredDeltaE "prediction"
       zoom universe . U.writeToLog $
         agentId a ++ " predicted " ++ show predicted
         ++ ", actual value was " ++ show actual
-        ++ ", accuracy was " ++ show accuracy
+        ++ ", error was " ++ show err
+        ++ ", rel. accuracy was " ++ show relAccuracy
+        ++ ", min error was " ++ show eMin
+        ++ ", max error was " ++ show eMax
         ++ ", reward is " ++ show deltaE
       assign (summary . rPredictedValue) predicted
       assign (summary . rActualValue) actual
-      let err = abs $ uiToDouble actual - uiToDouble predicted
       assign (summary . rValuePredictionErr) err
       letSubjectReflect a r
       -- zoom (universe . U.uPredictions) . putPS . remove3 (agentId a) $ ps
@@ -447,11 +479,6 @@ lookup3 :: Eq a => a -> [(a, b, c)] -> Maybe (b, c)
 lookup3 k ((a, b, c):xs) | a == k    = Just (b, c)
                          | otherwise = lookup3 k xs
 lookup3 _ [] = Nothing
-
--- remove3 :: Eq a => a -> [(a, b, c)] -> [(a, b, c)]
--- remove3 k ((a, b, c):xs) | a == k    = xs
---                          | otherwise = (a, b, c):remove3 k xs
--- remove3 _ [] = []
 
 thirdOfThree :: (a, b, c) -> c
 thirdOfThree (_, _, c) = c
