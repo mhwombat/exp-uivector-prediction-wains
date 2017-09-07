@@ -248,7 +248,8 @@ evaluateErrors = do
     U.writeToLog $ "DEBUG actual=" ++ show actual
     let popPrediction = doubleToUI . mean . map uiToDouble $ ps
     U.writeToLog $ "DEBUG popPrediction=" ++ show popPrediction
-    let popError = abs (actual - popPrediction)
+    let popError = doubleToUI $
+                     abs (uiToDouble actual - uiToDouble popPrediction)
     U.writeToLog $ "actual=" ++ show actual
       ++ " pop. prediction=" ++ show popPrediction
       ++ " pop. error=" ++ show popError
