@@ -164,8 +164,8 @@ data Universe a = Universe
     _uPreviousPredictions
       :: Persistent [(AgentId, Response Action, UIDouble)],
     _uNewPredictions :: Persistent [(AgentId, Response Action, UIDouble)],
-    _uMaxIndivError :: Persistent Double,
-    _uMinIndivError :: Persistent Double
+    _uMaxIndivError :: Persistent UIDouble,
+    _uMinIndivError :: Persistent UIDouble
   } deriving Show
 makeLenses ''Universe
 

@@ -146,7 +146,7 @@ data Summary = Summary
     _rChildNetDeltaE :: Double,
     _rPredictedValue :: UIDouble,
     _rActualValue :: UIDouble,
-    _rValuePredictionErr :: Double,
+    _rValuePredictionErr :: UIDouble,
     _rRewardPredictionErr :: Double,
     _rBirthCount :: Int,
     _rWeanCount :: Int,
@@ -247,7 +247,7 @@ evaluateErrors = do
     let actual = head xs
     let popPrediction = mean ps
     let popError = abs (actual - popPrediction)
-    let es = map (uiToDouble . abs . (actual -)) ps
+    let es = map (abs . (actual -)) ps
     let maxIndivError = maximum es
     let minIndivError = minimum es
     zoom U.uMaxIndivError $ putPS maxIndivError
@@ -408,12 +408,13 @@ rewardPrediction = do
       zoom universe . U.writeToLog $ "First turn for " ++ agentId a
     Just (r, predicted) -> do
       actual <- head <$> zoom (universe . U.uCurrVector) getPS
-      let err = abs $ uiToDouble actual - uiToDouble predicted
+      let err = abs (actual - predicted)
       eMax <- zoom (universe . U.uMaxIndivError) getPS
       eMin <- zoom (universe . U.uMinIndivError) getPS
       accuracyDeltaE <- use (universe . U.uAccuracyDeltaE)
       accuracyPower <- use (universe . U.uAccuracyPower)
-      let relAccuracy = (eMax - err)/(eMax - eMin)
+      let relAccuracy = (uiToDouble eMax - uiToDouble err)
+                          /(uiToDouble eMax - uiToDouble eMin)
       let deltaE = if eMax == eMin
                       then accuracyDeltaE
                       else accuracyDeltaE * (relAccuracy^accuracyPower)
