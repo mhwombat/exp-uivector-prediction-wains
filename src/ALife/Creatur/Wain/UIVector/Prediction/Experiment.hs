@@ -246,7 +246,7 @@ evaluateErrors = do
   when (not . null $ ps) $ do
     let actual = head xs
     U.writeToLog $ "DEBUG actual=" ++ show actual
-    let popPrediction = mean ps
+    let popPrediction = doubleToUI . mean . map uiToDouble $ ps
     U.writeToLog $ "DEBUG popPrediction=" ++ show popPrediction
     let popError = abs (actual - popPrediction)
     U.writeToLog $ "actual=" ++ show actual
