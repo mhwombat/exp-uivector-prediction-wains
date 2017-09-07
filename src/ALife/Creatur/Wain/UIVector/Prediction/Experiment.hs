@@ -413,7 +413,8 @@ rewardPrediction = do
       zoom universe . U.writeToLog $ "First turn for " ++ agentId a
     Just (r, predicted) -> do
       actual <- head <$> zoom (universe . U.uCurrVector) getPS
-      let err = abs (actual - predicted)
+      let err = doubleToUI $
+                  abs (uiToDouble actual - uiToDouble predicted)
       eMax <- zoom (universe . U.uMaxIndivError) getPS
       eMin <- zoom (universe . U.uMinIndivError) getPS
       accuracyDeltaE <- use (universe . U.uAccuracyDeltaE)
