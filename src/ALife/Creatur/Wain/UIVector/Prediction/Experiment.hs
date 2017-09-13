@@ -256,7 +256,8 @@ evaluateErrors = do
     let ps' = map (assessAccuracy accuracyPower actual) ps
     U.writeToLog $ "DEBUG ps'=" ++ show ps'
     zoom U.uPrevPredictions $ putPS ps'
-    let meanScore = mean . map (\(_,_,_,_,s) -> s) $ ps'
+    let meanScore
+          = doubleToUI . mean . map (\(_,_,_,_,s) -> uiToDouble s) $ ps'
     U.writeToLog $ "mean score=" ++ show meanScore
     zoom U.uMeanScore $ putPS meanScore
 
