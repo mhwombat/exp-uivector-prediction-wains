@@ -267,7 +267,7 @@ assessAccuracy
 assessAccuracy accuracyPower actual (n, r, xPredicted)
   = (n, r, xPredicted, doubleToUI err, doubleToUI score)
   where err = abs $ uiToDouble actual - uiToDouble xPredicted
-        score = 1 - err^accuracyPower
+        score = (1 - err)^accuracyPower
 
 finishRound :: StateT (U.Universe PatternWain) IO ()
 finishRound = do
