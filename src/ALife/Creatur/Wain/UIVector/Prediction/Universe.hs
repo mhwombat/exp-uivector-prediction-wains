@@ -76,8 +76,9 @@ module ALife.Creatur.Wain.UIVector.Prediction.Universe
     uNewPredictions,
     uMaxIndivError,
     uMinIndivError,
-    uMetabMetrics,
-    uMeanMetabMetric,
+    uPrevMetabMetrics,
+    uCurrMetabMetrics,
+    uPrevMeanMetabMetric,
     -- * Other
     U.agentIds,
     U.currentTime,
@@ -168,8 +169,9 @@ data Universe a = Universe
     _uNewPredictions :: Persistent [(AgentId, Response Action, UIDouble)],
     _uMaxIndivError :: Persistent UIDouble,
     _uMinIndivError :: Persistent UIDouble,
-    _uMetabMetrics :: Persistent [(AgentId, Double)],
-    _uMeanMetabMetric :: Persistent Double
+    _uPrevMetabMetrics :: Persistent [(AgentId, Double)],
+    _uCurrMetabMetrics :: Persistent [(AgentId, Double)],
+    _uPrevMeanMetabMetric :: Persistent Double
   } deriving Show
 makeLenses ''Universe
 
@@ -389,10 +391,12 @@ config2Universe getSetting =
       _uNewPredictions = mkPersistent [] (workDir ++ "/newPredictions"),
       _uMaxIndivError = mkPersistent 0 (workDir ++ "/maxIndivError"),
       _uMinIndivError = mkPersistent 0 (workDir ++ "/minIndivError"),
-      _uMetabMetrics
-        = mkPersistent [] (workDir ++ "/metabMetrics"),
-      _uMeanMetabMetric
-        = mkPersistent 1 (workDir ++ "/meanMetabMetric")
+      _uPrevMetabMetrics
+        = mkPersistent [] (workDir ++ "/prevMetabMetrics"),
+      _uCurrMetabMetrics
+        = mkPersistent [] (workDir ++ "/currMetabMetrics"),
+      _uPrevMeanMetabMetric
+        = mkPersistent 1 (workDir ++ "/prevMeanMetabMetric")
     }
   where en = getSetting cExperimentName
         workDir = getSetting cWorkingDir

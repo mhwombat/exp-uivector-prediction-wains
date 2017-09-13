@@ -29,7 +29,7 @@ module ALife.Creatur.Wain.UIVector.Prediction.Experiment
     idealPopControlDeltaE -- exported for testing only
   ) where
 
-import ALife.Creatur (agentId, isAlive, programVersion, AgentId)
+import ALife.Creatur (agentId, isAlive, programVersion)
 import ALife.Creatur.Persistent (getPS, putPS)
 import ALife.Creatur.Task (checkPopSize, requestShutdown)
 import qualified ALife.Creatur.Wain as W
@@ -285,12 +285,13 @@ finishRound = do
 
 calculateMeanMetabMetric :: StateT (U.Universe PatternWain) IO ()
 calculateMeanMetabMetric = do
-  ks <- zoom U.uMetabMetrics getPS
+  ks <- zoom U.uCurrMetabMetrics getPS
   let k = if null ks
             then 1
             else mean (map snd ks)
-  zoom U.uMeanMetabMetric $ putPS k
-  zoom U.uMetabMetrics $ putPS []
+  zoom U.uPrevMetabMetrics $ putPS ks
+  zoom U.uPrevMeanMetabMetric $ putPS k
+  zoom U.uCurrMetabMetrics $ putPS []
 
 report :: String -> StateT Experiment IO ()
 report = zoom universe . U.writeToLog
@@ -400,8 +401,8 @@ measureMetabolism = do
   ccf <- use (universe . U.uChildCostFactor)
   let x = metabMetric 1 a
                  + sum (map (metabMetric ccf) (view W.litter a))
-  xs <- zoom (universe . U.uMetabMetrics) getPS
-  zoom (universe . U.uMetabMetrics) $ putPS ((agentId a, x):xs)
+  xs <- zoom (universe . U.uCurrMetabMetrics) getPS
+  zoom (universe . U.uCurrMetabMetrics) $ putPS ((agentId a, x):xs)
 
 metabMetric :: Double -> PatternWain -> Double
 metabMetric scale w = scale * n
@@ -410,7 +411,7 @@ metabMetric scale w = scale * n
 runMetabolism :: StateT Experiment IO ()
 runMetabolism = do
   a <- use subject
-  xs <- zoom (universe . U.uMetabMetrics) getPS :: StateT Experiment IO [(AgentId, Double)]
+  xs <- zoom (universe . U.uPrevMetabMetrics) getPS
   case lookup (agentId a) xs of
     Nothing ->
       zoom universe . U.writeToLog
@@ -418,8 +419,13 @@ runMetabolism = do
     Just size -> do
       bmc <- use (universe . U.uBaseMetabolismDeltaE)
       cpcm <- use (universe . U.uAdjustableMetabolismDeltaE)
-      meanSize <- zoom (universe . U.uMeanMetabMetric) getPS
+      meanSize <- zoom (universe . U.uPrevMeanMetabMetric) getPS
       let deltaE = bmc + cpcm * size / meanSize
+      zoom universe . U.writeToLog $
+        "DEBUG bmc=" ++ show bmc
+        ++ " size=" ++ show size
+        ++ " meanSize=" ++ show meanSize
+        ++ " deltaE=" ++ show deltaE
       adjustWainEnergy subject deltaE rMetabolismDeltaE "metabolism"
 
 rewardPrediction :: StateT Experiment IO ()
