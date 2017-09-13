@@ -72,10 +72,9 @@ module ALife.Creatur.Wain.UIVector.Prediction.Universe
     uCheckpoints,
     uCurrVector,
     uPrevVector,
-    uPreviousPredictions,
     uNewPredictions,
-    uMaxIndivError,
-    uMinIndivError,
+    uPrevPredictions,
+    uMeanScore,
     uPrevMetabMetrics,
     uCurrMetabMetrics,
     uPrevMeanMetabMetric,
@@ -164,11 +163,11 @@ data Universe a = Universe
     _uCheckpoints :: [CP.Checkpoint],
     _uCurrVector :: Persistent [UIDouble],
     _uPrevVector :: Persistent [UIDouble],
-    _uPreviousPredictions
-      :: Persistent [(AgentId, Response Action, UIDouble)],
+    _uPrevPredictions
+      :: Persistent
+        [(AgentId, Response Action, UIDouble, UIDouble, UIDouble)],
     _uNewPredictions :: Persistent [(AgentId, Response Action, UIDouble)],
-    _uMaxIndivError :: Persistent UIDouble,
-    _uMinIndivError :: Persistent UIDouble,
+    _uMeanScore :: Persistent UIDouble,
     _uPrevMetabMetrics :: Persistent [(AgentId, Double)],
     _uCurrMetabMetrics :: Persistent [(AgentId, Double)],
     _uPrevMeanMetabMetric :: Persistent Double
@@ -386,11 +385,10 @@ config2Universe getSetting =
       _uCheckpoints = getSetting cCheckpoints,
       _uCurrVector = mkPersistent zeroes (workDir ++ "/currVector"),
       _uPrevVector = mkPersistent zeroes (workDir ++ "/prevVector"),
-      _uPreviousPredictions
-        = mkPersistent [] (workDir ++ "/prevPredictions"),
       _uNewPredictions = mkPersistent [] (workDir ++ "/newPredictions"),
-      _uMaxIndivError = mkPersistent 0 (workDir ++ "/maxIndivError"),
-      _uMinIndivError = mkPersistent 0 (workDir ++ "/minIndivError"),
+      _uPrevPredictions
+        = mkPersistent [] (workDir ++ "/prevPredictions"),
+      _uMeanScore = mkPersistent 0 (workDir ++ "/meanScore"),
       _uPrevMetabMetrics
         = mkPersistent [] (workDir ++ "/prevMetabMetrics"),
       _uCurrMetabMetrics

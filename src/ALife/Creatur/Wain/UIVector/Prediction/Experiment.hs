@@ -29,7 +29,7 @@ module ALife.Creatur.Wain.UIVector.Prediction.Experiment
     idealPopControlDeltaE -- exported for testing only
   ) where
 
-import ALife.Creatur (agentId, isAlive, programVersion)
+import ALife.Creatur (AgentId, agentId, isAlive, programVersion)
 import ALife.Creatur.Persistent (getPS, putPS)
 import ALife.Creatur.Task (checkPopSize, requestShutdown)
 import qualified ALife.Creatur.Wain as W
@@ -225,7 +225,6 @@ startRound = do
   whenM (zoom U.uDataSource endOfData) $ requestShutdown "end of data"
   updateVector
   evaluateErrors
-  rotatePredictions
 
 updateVector :: StateT (U.Universe PatternWain) IO ()
 updateVector = do
@@ -242,29 +241,31 @@ updateVector = do
 evaluateErrors :: StateT (U.Universe PatternWain) IO ()
 evaluateErrors = do
   xs <- zoom U.uCurrVector getPS
-  ps <- fmap (map thirdOfThree) $ zoom U.uNewPredictions getPS
+  ps <- zoom U.uNewPredictions getPS
+  zoom U.uNewPredictions $ putPS []
   when (not . null $ ps) $ do
     let actual = head xs
-    let popPrediction = doubleToUI . mean . map uiToDouble $ ps
+    let popPrediction
+          = doubleToUI . mean . map (uiToDouble . thirdOfThree) $ ps
     let popError = doubleToUI $
                      abs (uiToDouble actual - uiToDouble popPrediction)
     U.writeToLog $ "actual=" ++ show actual
       ++ " pop. prediction=" ++ show popPrediction
       ++ " pop. error=" ++ show popError
-    let actual' = uiToDouble actual
-    let es = map (doubleToUI . abs . (actual' -) . uiToDouble) ps
-    let maxIndivError = maximum es
-    let minIndivError = minimum es
-    zoom U.uMaxIndivError $ putPS maxIndivError
-    zoom U.uMinIndivError $ putPS minIndivError
-    U.writeToLog $ "max individual error=" ++ show maxIndivError
-      ++ " min individual error=" ++ show minIndivError
+    accuracyPower <- use U.uAccuracyPower
+    let ps' = map (assessAccuracy accuracyPower actual) ps
+    zoom U.uPrevPredictions $ putPS ps'
+    let meanScore = mean . map (\(_,_,_,_,s) -> s) $ ps'
+    zoom U.uMeanScore $ putPS meanScore
+    U.writeToLog $ "mean score=" ++ show meanScore
 
-rotatePredictions :: StateT (U.Universe PatternWain) IO ()
-rotatePredictions = do
-  ps <- zoom U.uNewPredictions getPS
-  zoom U.uPreviousPredictions $ putPS ps
-  zoom U.uNewPredictions $ putPS []
+assessAccuracy
+  :: Int -> UIDouble -> (AgentId, Response Action, UIDouble)
+      -> (AgentId, Response Action, UIDouble, UIDouble, UIDouble)
+assessAccuracy accuracyPower actual (n, r, xPredicted)
+  = (n, r, xPredicted, doubleToUI err, doubleToUI score)
+  where err = abs $ uiToDouble actual - uiToDouble xPredicted
+        score = 1 - err^accuracyPower
 
 finishRound :: StateT (U.Universe PatternWain) IO ()
 finishRound = do
@@ -421,48 +422,33 @@ runMetabolism = do
       cpcm <- use (universe . U.uAdjustableMetabolismDeltaE)
       meanSize <- zoom (universe . U.uPrevMeanMetabMetric) getPS
       let deltaE = bmc + cpcm * size / meanSize
-      zoom universe . U.writeToLog $
-        "DEBUG bmc=" ++ show bmc
-        ++ " size=" ++ show size
-        ++ " meanSize=" ++ show meanSize
-        ++ " deltaE=" ++ show deltaE
       adjustWainEnergy subject deltaE rMetabolismDeltaE "metabolism"
 
 rewardPrediction :: StateT Experiment IO ()
 rewardPrediction = do
   a <- use subject
-  ps <- zoom (universe . U.uPreviousPredictions) getPS
-  case lookup3 (agentId a) ps of
+  ps <- zoom (universe . U.uPrevPredictions) getPS
+  case lookup5 (agentId a) ps of
     Nothing ->
       zoom universe . U.writeToLog
         $ "First turn for " ++ agentId a ++ " no prediction reward"
-    Just (r, predicted) -> do
+    Just (r, predicted, err, score) -> do
       actual <- head <$> zoom (universe . U.uCurrVector) getPS
-      let err = doubleToUI $
-                  abs (uiToDouble actual - uiToDouble predicted)
-      eMax <- zoom (universe . U.uMaxIndivError) getPS
-      eMin <- zoom (universe . U.uMinIndivError) getPS
+      meanScore <- zoom (universe . U.uMeanScore) getPS
       accuracyDeltaE <- use (universe . U.uAccuracyDeltaE)
-      accuracyPower <- use (universe . U.uAccuracyPower)
-      let relAccuracy = (uiToDouble eMax - uiToDouble err)
-                          /(uiToDouble eMax - uiToDouble eMin)
-      let deltaE = if eMax == eMin
-                      then accuracyDeltaE
-                      else accuracyDeltaE * (relAccuracy^accuracyPower)
+      let deltaE = accuracyDeltaE * (uiToDouble score)/(uiToDouble meanScore)
       adjustWainEnergy subject deltaE rPredDeltaE "prediction"
       zoom universe . U.writeToLog $
         agentId a ++ " predicted " ++ show predicted
         ++ ", actual value was " ++ show actual
         ++ ", error was " ++ show err
-        ++ ", rel. accuracy was " ++ show relAccuracy
-        ++ ", min error was " ++ show eMin
-        ++ ", max error was " ++ show eMax
+        ++ ", score was " ++ show score
+        ++ ", mean score was " ++ show meanScore
         ++ ", reward is " ++ show deltaE
       assign (summary . rPredictedValue) predicted
       assign (summary . rActualValue) actual
       assign (summary . rValuePredictionErr) err
       letSubjectReflect a r
-      -- zoom (universe . U.uPredictions) . putPS . remove3 (agentId a) $ ps
 
 chooseAction3
   :: PatternWain -> [UIDouble]
@@ -507,10 +493,10 @@ analyseClassification ldss w = (dObjLabel, dObjNovelty, dObjNoveltyAdj)
         dObjNoveltyAdj
           = round $ uiToDouble dObjNovelty * fromIntegral (view W.age w)
 
-lookup3 :: Eq a => a -> [(a, b, c)] -> Maybe (b, c)
-lookup3 k ((a, b, c):xs) | a == k    = Just (b, c)
-                         | otherwise = lookup3 k xs
-lookup3 _ [] = Nothing
+lookup5 :: Eq a => a -> [(a, b, c, d, e)] -> Maybe (b, c, d, e)
+lookup5 k ((a, b, c, d, e):xs) | a == k    = Just (b, c, d, e)
+                               | otherwise = lookup5 k xs
+lookup5 _ [] = Nothing
 
 thirdOfThree :: (a, b, c) -> c
 thirdOfThree (_, _, c) = c
