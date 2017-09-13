@@ -29,7 +29,7 @@ module ALife.Creatur.Wain.UIVector.Prediction.Experiment
     idealPopControlDeltaE -- exported for testing only
   ) where
 
-import ALife.Creatur (agentId, isAlive, programVersion)
+import ALife.Creatur (agentId, isAlive, programVersion, AgentId)
 import ALife.Creatur.Persistent (getPS, putPS)
 import ALife.Creatur.Task (checkPopSize, requestShutdown)
 import qualified ALife.Creatur.Wain as W
@@ -70,7 +70,7 @@ import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Random (Rand, RandomGen, getRandom, getRandomR,
   getRandomRs, getRandoms, evalRandIO)
 import Control.Monad.State.Lazy (StateT, execStateT, get, put)
-import Data.List (intercalate, minimumBy)
+import Data.List (intercalate, minimumBy, lookup)
 import Data.Map (toList)
 import Data.Ord (comparing)
 import Data.Version (showVersion)
@@ -253,17 +253,10 @@ evaluateErrors = do
       ++ " pop. error=" ++ show popError
     let actual' = uiToDouble actual
     let es = map (doubleToUI . abs . (actual' -) . uiToDouble) ps
-    U.writeToLog $ "DEBUG es=" ++ show es
     let maxIndivError = maximum es
-    U.writeToLog $ "DEBUG maxIndivError=" ++ show maxIndivError
     let minIndivError = minimum es
-    U.writeToLog $ "DEBUG minIndivError=" ++ show minIndivError
     zoom U.uMaxIndivError $ putPS maxIndivError
     zoom U.uMinIndivError $ putPS minIndivError
-    -- debug <- zoom U.uNewPredictions getPS
-    -- U.writeToLog $ "DEBUG debug=" ++ show debug
-    -- U.writeToLog $ "ps=" ++ show ps
-    -- U.writeToLog $ "es=" ++ show es
     U.writeToLog $ "max individual error=" ++ show maxIndivError
       ++ " min individual error=" ++ show minIndivError
 
@@ -277,6 +270,7 @@ finishRound :: StateT (U.Universe PatternWain) IO ()
 finishRound = do
   v <- use U.uCurrVector
   assign U.uPrevVector v
+  calculateMeanMetabMetric
   f <- use U.uStatsFile
   xss <- readStats f
   let yss = summarise xss
@@ -288,6 +282,15 @@ finishRound = do
   clearStats f
   (a, b) <- use U.uAllowedPopulationRange
   checkPopSize (a, b)
+
+calculateMeanMetabMetric :: StateT (U.Universe PatternWain) IO ()
+calculateMeanMetabMetric = do
+  ks <- zoom U.uMetabMetrics getPS
+  let k = if null ks
+            then 1
+            else mean (map snd ks)
+  zoom U.uMeanMetabMetric $ putPS k
+  zoom U.uMetabMetrics $ putPS []
 
 report :: String -> StateT Experiment IO ()
 report = zoom universe . U.writeToLog
@@ -334,6 +337,7 @@ run' = do
   balanceEnergyEquation e0 ec0 ef ecf
   updateChildren
   runMetabolism
+  measureMetabolism
   killIfTooOld
   agentStats <- ((customStats a' ++) . summaryStats) <$> use summary
   report $ "At end of turn, " ++ agentId a
@@ -390,19 +394,33 @@ balanceEnergyEquation e0 ec0 ef ecf = do
       ++ ", childNetDeltaE1=" ++ show childNetDeltaE1
       ++ ", childErr=" ++ show childErr
 
+measureMetabolism :: StateT Experiment IO ()
+measureMetabolism = do
+  a <- use subject
+  ccf <- use (universe . U.uChildCostFactor)
+  let x = metabMetric 1 a
+                 + sum (map (metabMetric ccf) (view W.litter a))
+  xs <- zoom (universe . U.uMetabMetrics) getPS
+  zoom (universe . U.uMetabMetrics) $ putPS ((agentId a, x):xs)
+
+metabMetric :: Double -> PatternWain -> Double
+metabMetric scale w = scale * n
+  where n = fromIntegral . numModels . view (W.brain . classifier) $ w
+
 runMetabolism :: StateT Experiment IO ()
 runMetabolism = do
   a <- use subject
-  bmc <- use (universe . U.uBaseMetabolismDeltaE)
-  cpcm <- use (universe . U.uEnergyCostPerClassifierModel)
-  ccf <- use (universe . U.uChildCostFactor)
-  let deltaE = metabCost bmc cpcm 1 a
-                 + sum (map (metabCost bmc cpcm ccf) (view W.litter a))
-  adjustWainEnergy subject deltaE rMetabolismDeltaE "metabolism"
-
-metabCost :: Double -> Double -> Double -> PatternWain -> Double
-metabCost bmc cpcm scale w = scale * (bmc + cpcm * fromIntegral n)
-  where n = numModels . view (W.brain . classifier) $ w
+  xs <- zoom (universe . U.uMetabMetrics) getPS :: StateT Experiment IO [(AgentId, Double)]
+  case lookup (agentId a) xs of
+    Nothing ->
+      zoom universe . U.writeToLog
+        $ "First turn for " ++ agentId a ++ " no metabolism cost"
+    Just size -> do
+      bmc <- use (universe . U.uBaseMetabolismDeltaE)
+      cpcm <- use (universe . U.uAdjustableMetabolismDeltaE)
+      meanSize <- zoom (universe . U.uMeanMetabMetric) getPS
+      let deltaE = bmc + cpcm * size / meanSize
+      adjustWainEnergy subject deltaE rMetabolismDeltaE "metabolism"
 
 rewardPrediction :: StateT Experiment IO ()
 rewardPrediction = do
@@ -410,7 +428,8 @@ rewardPrediction = do
   ps <- zoom (universe . U.uPreviousPredictions) getPS
   case lookup3 (agentId a) ps of
     Nothing ->
-      zoom universe . U.writeToLog $ "First turn for " ++ agentId a
+      zoom universe . U.writeToLog
+        $ "First turn for " ++ agentId a ++ " no prediction reward"
     Just (r, predicted) -> do
       actual <- head <$> zoom (universe . U.uCurrVector) getPS
       let err = doubleToUI $
@@ -662,8 +681,7 @@ reportAnyDeaths ws = mapM_ f ws
                 U.writeToLog
                   (agentId w ++ " dead at age " ++ show (view W.age w))
 
--- mean :: (Eq a, Fractional a, Foldable t) => t a -> a
-mean :: (Fractional a, Eq a) => [a] -> a
+mean :: (Eq a, Fractional a, Foldable t) => t a -> a
 mean xs
   | count == 0 = error "no data"
   | otherwise = total / count

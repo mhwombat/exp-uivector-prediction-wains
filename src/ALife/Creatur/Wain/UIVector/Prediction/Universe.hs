@@ -52,7 +52,7 @@ module ALife.Creatur.Wain.UIVector.Prediction.Universe
     uAccuracyPower,
     uAccuracyDeltaE,
     uBaseMetabolismDeltaE,
-    uEnergyCostPerClassifierModel,
+    uAdjustableMetabolismDeltaE,
     uChildCostFactor,
     uFlirtingFrequency,
     uPopControlDeltaE,
@@ -76,6 +76,8 @@ module ALife.Creatur.Wain.UIVector.Prediction.Universe
     uNewPredictions,
     uMaxIndivError,
     uMinIndivError,
+    uMetabMetrics,
+    uMeanMetabMetric,
     -- * Other
     U.agentIds,
     U.currentTime,
@@ -141,7 +143,7 @@ data Universe a = Universe
     _uAccuracyPower :: Int,
     _uAccuracyDeltaE :: Double,
     _uBaseMetabolismDeltaE :: Double,
-    _uEnergyCostPerClassifierModel :: Double,
+    _uAdjustableMetabolismDeltaE :: Double,
     _uChildCostFactor :: Double,
     _uFlirtingFrequency :: UIDouble,
     _uPopControlDeltaE :: Persistent Double,
@@ -165,7 +167,9 @@ data Universe a = Universe
       :: Persistent [(AgentId, Response Action, UIDouble)],
     _uNewPredictions :: Persistent [(AgentId, Response Action, UIDouble)],
     _uMaxIndivError :: Persistent UIDouble,
-    _uMinIndivError :: Persistent UIDouble
+    _uMinIndivError :: Persistent UIDouble,
+    _uMetabMetrics :: Persistent [(AgentId, Double)],
+    _uMeanMetabMetric :: Persistent Double
   } deriving Show
 makeLenses ''Universe
 
@@ -262,9 +266,9 @@ cAccuracyDeltaE = requiredSetting "accuracyDeltaE"
 cBaseMetabolismDeltaE :: Setting Double
 cBaseMetabolismDeltaE = requiredSetting "baseMetabDeltaE"
 
-cEnergyCostPerClassifierModel :: Setting Double
-cEnergyCostPerClassifierModel
-  = requiredSetting "energyCostPerClassifierModel"
+cAdjustableMetabolismDeltaE :: Setting Double
+cAdjustableMetabolismDeltaE
+  = requiredSetting "adjustableMetabolismDeltaE"
 
 cChildCostFactor :: Setting Double
 cChildCostFactor = requiredSetting "childCostFactor"
@@ -358,8 +362,8 @@ config2Universe getSetting =
       _uAccuracyPower = getSetting cAccuracyPower,
       _uAccuracyDeltaE = getSetting cAccuracyDeltaE,
       _uBaseMetabolismDeltaE = getSetting cBaseMetabolismDeltaE,
-      _uEnergyCostPerClassifierModel
-        = getSetting cEnergyCostPerClassifierModel,
+      _uAdjustableMetabolismDeltaE
+        = getSetting cAdjustableMetabolismDeltaE,
       _uChildCostFactor = getSetting cChildCostFactor,
       _uFlirtingFrequency = getSetting cFlirtingFrequency,
       _uPopControlDeltaE
@@ -384,7 +388,11 @@ config2Universe getSetting =
         = mkPersistent [] (workDir ++ "/prevPredictions"),
       _uNewPredictions = mkPersistent [] (workDir ++ "/newPredictions"),
       _uMaxIndivError = mkPersistent 0 (workDir ++ "/maxIndivError"),
-      _uMinIndivError = mkPersistent 0 (workDir ++ "/minIndivError")
+      _uMinIndivError = mkPersistent 0 (workDir ++ "/minIndivError"),
+      _uMetabMetrics
+        = mkPersistent [] (workDir ++ "/metabMetrics"),
+      _uMeanMetabMetric
+        = mkPersistent 1 (workDir ++ "/meanMetabMetric")
     }
   where en = getSetting cExperimentName
         workDir = getSetting cWorkingDir
