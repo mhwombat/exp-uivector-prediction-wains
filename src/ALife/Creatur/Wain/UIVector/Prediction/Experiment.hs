@@ -254,10 +254,11 @@ evaluateErrors = do
       ++ " pop. error=" ++ show popError
     accuracyPower <- use U.uAccuracyPower
     let ps' = map (assessAccuracy accuracyPower actual) ps
+    U.writeToLog $ "DEBUG ps'=" ++ show ps'
     zoom U.uPrevPredictions $ putPS ps'
     let meanScore = mean . map (\(_,_,_,_,s) -> s) $ ps'
-    zoom U.uMeanScore $ putPS meanScore
     U.writeToLog $ "mean score=" ++ show meanScore
+    zoom U.uMeanScore $ putPS meanScore
 
 assessAccuracy
   :: Int -> UIDouble -> (AgentId, Response Action, UIDouble)
