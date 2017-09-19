@@ -254,7 +254,6 @@ evaluateErrors = do
       ++ " pop. error=" ++ show popError
     accuracyPower <- use U.uAccuracyPower
     let ps' = map (assessAccuracy accuracyPower actual) ps
-    U.writeToLog $ "DEBUG ps'=" ++ show ps'
     zoom U.uPrevPredictions $ putPS ps'
     let meanScore
           = doubleToUI . mean . map (\(_,_,_,_,s) -> uiToDouble s) $ ps'
@@ -613,8 +612,8 @@ adjustPopControlDeltaE xs =
 idealPopControlDeltaE :: Double -> Int -> Int -> Double
 idealPopControlDeltaE averageEnergy idealPop pop
   | pop < round ((fromIntegral idealPop) * 0.75 :: Double)
-      && averageEnergy < 0.6
-        = 0.6 - averageEnergy
+      && averageEnergy < 0.8
+        = 0.8 - averageEnergy
   | pop > round ((fromIntegral idealPop) * 1.25 :: Double)
       && averageEnergy > 0.2
         = 0.2 - averageEnergy
