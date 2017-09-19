@@ -598,7 +598,7 @@ adjustPopControlDeltaE
   :: [Stats.Statistic] -> StateT (U.Universe PatternWain) IO ()
 adjustPopControlDeltaE xs =
   unless (null xs) $ do
-    let (Just averageEnergy) = Stats.lookup "avg. energy" xs
+    let (Just averageEnergy) = Stats.lookup "avg. adult energy" xs
     idealPop <- use U.uInitialPopulationSize
     pop <- U.popSize
     let c = idealPopControlDeltaE averageEnergy idealPop pop
