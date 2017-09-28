@@ -48,7 +48,6 @@ module ALife.Creatur.Wain.UIVector.Prediction.Universe
     uInitialPopulationSize,
     uAllowedPopulationRange,
     uPopControl,
-    uAccuracyPower,
     uAccuracyDeltaE,
     uBaseMetabolismDeltaE,
     uAdjustableMetabolismDeltaE,
@@ -73,7 +72,6 @@ module ALife.Creatur.Wain.UIVector.Prediction.Universe
     uPrevVector,
     uNewPredictions,
     uPrevPredictions,
-    uMeanScore,
     uPrevMetabMetrics,
     uCurrMetabMetrics,
     uPrevMeanMetabMetric,
@@ -138,7 +136,6 @@ data Universe a = Universe
     _uInitialPopulationSize :: Int,
     _uAllowedPopulationRange :: (Int, Int),
     _uPopControl :: Bool,
-    _uAccuracyPower :: Int,
     _uAccuracyDeltaE :: Double,
     _uBaseMetabolismDeltaE :: Double,
     _uAdjustableMetabolismDeltaE :: Double,
@@ -163,9 +160,8 @@ data Universe a = Universe
     _uPrevVector :: Persistent [UIDouble],
     _uPrevPredictions
       :: Persistent
-        [(AgentId, Response Action, UIDouble, UIDouble, UIDouble)],
+        [(AgentId, Response Action, UIDouble, UIDouble)],
     _uNewPredictions :: Persistent [(AgentId, Response Action, UIDouble)],
-    _uMeanScore :: Persistent UIDouble,
     _uPrevMetabMetrics :: Persistent [(AgentId, Double)],
     _uCurrMetabMetrics :: Persistent [(AgentId, Double)],
     _uPrevMeanMetabMetric :: Persistent Double
@@ -255,9 +251,6 @@ cAllowedPopulationRange = requiredSetting "allowedPopRange"
 
 cPopControl :: Setting Bool
 cPopControl = requiredSetting "popControl"
-
-cAccuracyPower :: Setting Int
-cAccuracyPower = requiredSetting "accuracyPower"
 
 cAccuracyDeltaE :: Setting Double
 cAccuracyDeltaE = requiredSetting "accuracyDeltaE"
@@ -357,7 +350,6 @@ config2Universe getSetting =
       _uInitialPopulationSize = p0,
       _uAllowedPopulationRange = (a', b'),
       _uPopControl = getSetting cPopControl,
-      _uAccuracyPower = getSetting cAccuracyPower,
       _uAccuracyDeltaE = getSetting cAccuracyDeltaE,
       _uBaseMetabolismDeltaE = getSetting cBaseMetabolismDeltaE,
       _uAdjustableMetabolismDeltaE
@@ -385,7 +377,6 @@ config2Universe getSetting =
       _uNewPredictions = mkPersistent [] (workDir ++ "/newPredictions"),
       _uPrevPredictions
         = mkPersistent [] (workDir ++ "/prevPredictions"),
-      _uMeanScore = mkPersistent 0 (workDir ++ "/meanScore"),
       _uPrevMetabMetrics
         = mkPersistent [] (workDir ++ "/prevMetabMetrics"),
       _uCurrMetabMetrics

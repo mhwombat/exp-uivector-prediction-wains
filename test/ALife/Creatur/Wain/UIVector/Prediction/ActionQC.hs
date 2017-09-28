@@ -45,6 +45,11 @@ prop_predict_consistent_with_postdict x1 a =
   x2 > 0 && x2 < 1 ==> a' == a
   where x2 = predict a x1
         a' = postdict x1 x2
+--prop_predict_consistent_with_postdict x a =
+--  0 < xa && xa < 1 ==> abs (uiToDouble xa - uiToDouble xb) < 0.01
+--  where xa = predict a x
+--        a' = postdict x xa
+--        xb = predict a' x
 
 test :: Test
 test = testGroup "ALife.Creatur.Wain.UIVector.Prediction.ActionQC"

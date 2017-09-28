@@ -252,21 +252,16 @@ evaluateErrors = do
     U.writeToLog $ "actual=" ++ show actual
       ++ " pop. prediction=" ++ show popPrediction
       ++ " pop. error=" ++ show popError
-    accuracyPower <- use U.uAccuracyPower
-    let ps' = map (assessAccuracy accuracyPower actual) ps
+    let ps' = map (assessAccuracy actual) ps
+    U.writeToLog $ "DEBUG ps'=" ++ show ps'
     zoom U.uPrevPredictions $ putPS ps'
-    let meanScore
-          = doubleToUI . mean . map (\(_,_,_,_,s) -> uiToDouble s) $ ps'
-    U.writeToLog $ "mean score=" ++ show meanScore
-    zoom U.uMeanScore $ putPS meanScore
 
 assessAccuracy
-  :: Int -> UIDouble -> (AgentId, Response Action, UIDouble)
-      -> (AgentId, Response Action, UIDouble, UIDouble, UIDouble)
-assessAccuracy accuracyPower actual (n, r, xPredicted)
-  = (n, r, xPredicted, doubleToUI err, doubleToUI score)
+  :: UIDouble -> (AgentId, Response Action, UIDouble)
+      -> (AgentId, Response Action, UIDouble, UIDouble)
+assessAccuracy actual (n, r, xPredicted)
+  = (n, r, xPredicted, doubleToUI err)
   where err = abs $ uiToDouble actual - uiToDouble xPredicted
-        score = (1 - err)^accuracyPower
 
 finishRound :: StateT (U.Universe PatternWain) IO ()
 finishRound = do
@@ -429,22 +424,27 @@ rewardPrediction :: StateT Experiment IO ()
 rewardPrediction = do
   a <- use subject
   ps <- zoom (universe . U.uPrevPredictions) getPS
-  case lookup5 (agentId a) ps of
+  case lookup4 (agentId a) ps of
     Nothing ->
       zoom universe . U.writeToLog
         $ "First turn for " ++ agentId a ++ " no prediction reward"
-    Just (r, predicted, err, score) -> do
+    Just (r, predicted, err) -> do
       actual <- head <$> zoom (universe . U.uCurrVector) getPS
-      meanScore <- zoom (universe . U.uMeanScore) getPS
+      -- TODO: calculate this only once per round
+      let es = map fourthOfFour ps
+      let maxErr = uiToDouble $ maximum es
+      let minErr = uiToDouble $ minimum es
+      let factor | maxErr == minErr = 1
+                 | otherwise       = (maxErr - uiToDouble err)/(maxErr - minErr)
       accuracyDeltaE <- use (universe . U.uAccuracyDeltaE)
-      let deltaE = accuracyDeltaE * (uiToDouble score)/(uiToDouble meanScore)
+      let deltaE = factor * accuracyDeltaE
       adjustWainEnergy subject deltaE rPredDeltaE "prediction"
       zoom universe . U.writeToLog $
         agentId a ++ " predicted " ++ show predicted
         ++ ", actual value was " ++ show actual
         ++ ", error was " ++ show err
-        ++ ", score was " ++ show score
-        ++ ", mean score was " ++ show meanScore
+        ++ ", max error was " ++ show maxErr
+        ++ ", min error was " ++ show minErr
         ++ ", reward is " ++ show deltaE
       assign (summary . rPredictedValue) predicted
       assign (summary . rActualValue) actual
@@ -494,13 +494,16 @@ analyseClassification ldss w = (dObjLabel, dObjNovelty, dObjNoveltyAdj)
         dObjNoveltyAdj
           = round $ uiToDouble dObjNovelty * fromIntegral (view W.age w)
 
-lookup5 :: Eq a => a -> [(a, b, c, d, e)] -> Maybe (b, c, d, e)
-lookup5 k ((a, b, c, d, e):xs) | a == k    = Just (b, c, d, e)
-                               | otherwise = lookup5 k xs
-lookup5 _ [] = Nothing
+lookup4 :: Eq a => a -> [(a, b, c, d)] -> Maybe (b, c, d)
+lookup4 k ((a, b, c, d):xs) | a == k    = Just (b, c, d)
+                            | otherwise = lookup4 k xs
+lookup4 _ [] = Nothing
 
 thirdOfThree :: (a, b, c) -> c
 thirdOfThree (_, _, c) = c
+
+fourthOfFour :: (a, b, c, d) -> d
+fourthOfFour (_, _, _, d) = d
 
 makePrediction :: StateT Experiment IO ()
 makePrediction = do
