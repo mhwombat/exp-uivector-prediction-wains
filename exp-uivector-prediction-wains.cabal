@@ -1,5 +1,5 @@
 name:                exp-uivector-prediction-wains
-version:             1.7.0
+version:             1.7.1
 synopsis:            Agent for predicting the future.
 description:         ALife agent that competes with other
                      agents to predict the future.
@@ -52,6 +52,7 @@ executable exp-uivector-prediction-daemon
                     ALife.Creatur.Wain.UIVector.Prediction.Experiment
                     ALife.Creatur.Wain.UIVector.Prediction.ResponseTweaker
                     ALife.Creatur.Wain.UIVector.Prediction.Universe
+                    Paths_exp_uivector_prediction_wains
 
 executable exp-uivector-prediction-interactive
   main-is:          ALife/Creatur/Wain/UIVector/Prediction/Interactive.hs
@@ -90,6 +91,7 @@ executable exp-uivector-prediction-interactive
                     ALife.Creatur.Wain.UIVector.Prediction.Experiment
                     ALife.Creatur.Wain.UIVector.Prediction.ResponseTweaker
                     ALife.Creatur.Wain.UIVector.Prediction.Universe
+                    Paths_exp_uivector_prediction_wains
 
 executable exp-uivector-prediction-init
   main-is:          ALife/Creatur/Wain/UIVector/Prediction/GeneratePopulation.hs
@@ -126,6 +128,7 @@ executable exp-uivector-prediction-init
                     ALife.Creatur.Wain.UIVector.Prediction.Experiment
                     ALife.Creatur.Wain.UIVector.Prediction.ResponseTweaker
                     ALife.Creatur.Wain.UIVector.Prediction.Universe
+                    Paths_exp_uivector_prediction_wains
 
 executable exp-uivector-prediction-examine
   main-is:          ALife/Creatur/Wain/UIVector/Prediction/ExamineAgent.hs
@@ -163,6 +166,7 @@ executable exp-uivector-prediction-examine
                     ALife.Creatur.Wain.UIVector.Prediction.Experiment
                     ALife.Creatur.Wain.UIVector.Prediction.ResponseTweaker
                     ALife.Creatur.Wain.UIVector.Prediction.Universe
+                    Paths_exp_uivector_prediction_wains
 
 Test-suite exp-uivector-prediction-wains-tests
   Type:             exitcode-stdio-1.0
@@ -204,6 +208,7 @@ Test-suite exp-uivector-prediction-wains-tests
                     ALife.Creatur.Wain.UIVector.Prediction.Universe
                     ALife.Creatur.Wain.UIVector.Prediction.ActionQC
                     ALife.Creatur.Wain.UIVector.Prediction.ExperimentQC
+                    Paths_exp_uivector_prediction_wains
 
 source-repository head
   type:     git
