@@ -253,7 +253,6 @@ evaluateErrors = do
       ++ " pop. prediction=" ++ show popPrediction
       ++ " pop. error=" ++ show popError
     let ps' = map (assessAccuracy actual) ps
-    U.writeToLog $ "DEBUG ps'=" ++ show ps'
     zoom U.uPrevPredictions $ putPS ps'
 
 assessAccuracy
@@ -614,12 +613,18 @@ adjustPopControlDeltaE xs =
 -- TODO: Make the hard-coded numbers configurable
 idealPopControlDeltaE :: Double -> Int -> Int -> Double
 idealPopControlDeltaE averageEnergy idealPop pop
+  | pop < round ((fromIntegral idealPop) * 0.5 :: Double)
+      && averageEnergy < 0.9
+        = 0.9 - averageEnergy
   | pop < round ((fromIntegral idealPop) * 0.75 :: Double)
       && averageEnergy < 0.8
         = 0.8 - averageEnergy
   | pop > round ((fromIntegral idealPop) * 1.25 :: Double)
       && averageEnergy > 0.2
         = 0.2 - averageEnergy
+  | pop > round ((fromIntegral idealPop) * 1.5 :: Double)
+      && averageEnergy > 0.1
+        = 0.1 - averageEnergy
   | otherwise
         = 0
 
