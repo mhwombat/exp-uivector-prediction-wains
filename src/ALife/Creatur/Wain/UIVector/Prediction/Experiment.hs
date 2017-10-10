@@ -600,33 +600,18 @@ adjustPopControlDeltaE
   :: [Stats.Statistic] -> StateT (U.Universe PatternWain) IO ()
 adjustPopControlDeltaE xs =
   unless (null xs) $ do
-    let (Just averageEnergy) = Stats.lookup "avg. adult energy" xs
     idealPop <- use U.uInitialPopulationSize
     pop <- U.popSize
-    let c = idealPopControlDeltaE averageEnergy idealPop pop
-    U.writeToLog $ "Current avg. energy = " ++ show averageEnergy
+    let c = idealPopControlDeltaE idealPop pop
     U.writeToLog $ "Ideal pop = " ++ show idealPop
     U.writeToLog $ "Current pop = " ++ show pop
     U.writeToLog $ "Adjusted pop. control Δe = " ++ show c
     zoom U.uPopControlDeltaE $ putPS c
 
 -- TODO: Make the hard-coded numbers configurable
-idealPopControlDeltaE :: Double -> Int -> Int -> Double
-idealPopControlDeltaE averageEnergy idealPop pop
-  | pop < round ((fromIntegral idealPop) * 0.5 :: Double)
-      && averageEnergy < 0.9
-        = 0.9 - averageEnergy
-  | pop < round ((fromIntegral idealPop) * 0.75 :: Double)
-      && averageEnergy < 0.8
-        = 0.8 - averageEnergy
-  | pop > round ((fromIntegral idealPop) * 1.25 :: Double)
-      && averageEnergy > 0.2
-        = 0.2 - averageEnergy
-  | pop > round ((fromIntegral idealPop) * 1.5 :: Double)
-      && averageEnergy > 0.1
-        = 0.1 - averageEnergy
-  | otherwise
-        = 0
+idealPopControlDeltaE :: Int -> Int -> Double
+idealPopControlDeltaE idealPop pop = 0.3*(1 - p)
+  where p = fromIntegral pop / fromIntegral idealPop
 
 totalEnergy :: StateT Experiment IO (Double, Double)
 totalEnergy = do
