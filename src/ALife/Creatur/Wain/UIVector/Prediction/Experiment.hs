@@ -601,16 +601,17 @@ adjustPopControlDeltaE
 adjustPopControlDeltaE xs =
   unless (null xs) $ do
     idealPop <- use U.uInitialPopulationSize
+    slope <- use U.uPopControlSlope
     pop <- U.popSize
-    let c = idealPopControlDeltaE idealPop pop
+    let c = idealPopControlDeltaE idealPop pop slope
     U.writeToLog $ "Ideal pop = " ++ show idealPop
     U.writeToLog $ "Current pop = " ++ show pop
     U.writeToLog $ "Adjusted pop. control Δe = " ++ show c
     zoom U.uPopControlDeltaE $ putPS c
 
 -- TODO: Make the hard-coded numbers configurable
-idealPopControlDeltaE :: Int -> Int -> Double
-idealPopControlDeltaE idealPop pop = 0.3*(1 - p)
+idealPopControlDeltaE :: Int -> Int -> Double -> Double
+idealPopControlDeltaE idealPop pop slope = slope*(1 - p)
   where p = fromIntegral pop / fromIntegral idealPop
 
 totalEnergy :: StateT Experiment IO (Double, Double)

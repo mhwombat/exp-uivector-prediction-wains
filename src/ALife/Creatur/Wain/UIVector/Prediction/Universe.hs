@@ -48,6 +48,7 @@ module ALife.Creatur.Wain.UIVector.Prediction.Universe
     uInitialPopulationSize,
     uAllowedPopulationRange,
     uPopControl,
+    uPopControlSlope,
     uAccuracyDeltaE,
     uBaseMetabolismDeltaE,
     uAdjustableMetabolismDeltaE,
@@ -136,6 +137,7 @@ data Universe a = Universe
     _uInitialPopulationSize :: Int,
     _uAllowedPopulationRange :: (Int, Int),
     _uPopControl :: Bool,
+    _uPopControlSlope :: Double,
     _uAccuracyDeltaE :: Double,
     _uBaseMetabolismDeltaE :: Double,
     _uAdjustableMetabolismDeltaE :: Double,
@@ -252,6 +254,9 @@ cAllowedPopulationRange = requiredSetting "allowedPopRange"
 cPopControl :: Setting Bool
 cPopControl = requiredSetting "popControl"
 
+cPopControlSlope :: Setting Double
+cPopControlSlope = requiredSetting "popControlSlope"
+
 cAccuracyDeltaE :: Setting Double
 cAccuracyDeltaE = requiredSetting "accuracyDeltaE"
 
@@ -350,6 +355,7 @@ config2Universe getSetting =
       _uInitialPopulationSize = p0,
       _uAllowedPopulationRange = (a', b'),
       _uPopControl = getSetting cPopControl,
+      _uPopControlSlope = getSetting cPopControlSlope,
       _uAccuracyDeltaE = getSetting cAccuracyDeltaE,
       _uBaseMetabolismDeltaE = getSetting cBaseMetabolismDeltaE,
       _uAdjustableMetabolismDeltaE
