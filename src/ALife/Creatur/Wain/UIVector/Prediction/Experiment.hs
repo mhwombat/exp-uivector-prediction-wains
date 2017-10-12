@@ -321,6 +321,7 @@ run' = do
   report $ "At beginning of turn, " ++ agentId a
     ++ "'s summary: " ++ pretty (customStats a)
   rewardPrediction
+  runMetabolism
   autoPopControl <- use (universe . U.uPopControl)
   when autoPopControl applyPopControl
   subject %= W.incAge
@@ -333,7 +334,6 @@ run' = do
   (ef, ecf) <- totalEnergy
   balanceEnergyEquation e0 ec0 ef ecf
   updateChildren
-  runMetabolism
   measureMetabolism
   killIfTooOld
   agentStats <- ((customStats a' ++) . summaryStats) <$> use summary
@@ -601,7 +601,7 @@ adjustPopControlDeltaE
   :: [Stats.Statistic] -> StateT (U.Universe PatternWain) IO ()
 adjustPopControlDeltaE xs =
   unless (null xs) $ do
-    let (Just average) = Stats.lookup "avg. energy" xs
+    let (Just average) = Stats.lookup "avg. adult energy" xs
     let (Just total) = Stats.lookup "total energy" xs
     budget <- use U.uEnergyBudget
     initialEnergy <- use U.uInitialEnergy
