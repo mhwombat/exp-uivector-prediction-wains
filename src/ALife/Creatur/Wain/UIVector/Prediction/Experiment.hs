@@ -431,7 +431,7 @@ rewardPrediction = do
       actual <- head <$> zoom (universe . U.uCurrVector) getPS
       let e = abs (uiToDouble actual - uiToDouble predicted)
       meanError <- zoom (universe . U.uMeanError) getPS
-      minError <- zoom (universe . U.uMeanError) getPS
+      minError <- zoom (universe . U.uMinError) getPS
       meanDeltaE <- use (universe . U.uMeanAccuracyDeltaE)
       maxDeltaE <- use (universe . U.uMaxAccuracyDeltaE)
       let deltaE = if (abs(meanError - minError) < 1e-5)
