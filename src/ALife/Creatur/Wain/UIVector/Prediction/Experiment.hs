@@ -29,7 +29,7 @@ module ALife.Creatur.Wain.UIVector.Prediction.Experiment
     idealPopControlDeltaE -- exported for testing only
   ) where
 
-import ALife.Creatur (AgentId, agentId, isAlive, programVersion)
+import ALife.Creatur (agentId, isAlive, programVersion)
 import ALife.Creatur.Persistent (getPS, putPS)
 import ALife.Creatur.Task (checkPopSize, requestShutdown)
 import qualified ALife.Creatur.Wain as W
@@ -242,25 +242,25 @@ evaluateErrors :: StateT (U.Universe PatternWain) IO ()
 evaluateErrors = do
   xs <- zoom U.uCurrVector getPS
   ps <- zoom U.uNewPredictions getPS
+  zoom U.uPrevPredictions $ putPS ps
   zoom U.uNewPredictions $ putPS []
   when (not . null $ ps) $ do
-    let actual = head xs
-    let popPrediction
-          = doubleToUI . mean . map (uiToDouble . thirdOfThree) $ ps
-    let popError = doubleToUI $
-                     abs (uiToDouble actual - uiToDouble popPrediction)
+    let actual = uiToDouble . head $ xs
+    let predictions = map (uiToDouble . thirdOfThree) ps
+    let errors = map (\e -> abs (actual - e)) predictions
+    let popPrediction = mean predictions
+    let popError = abs (actual - popPrediction)
+    -- TODO: will meanError always equal popError?
+    let meanError = mean errors
+    let minError = minimum errors
+    zoom U.uMeanError $ putPS meanError
+    zoom U.uMinError $ putPS minError
     U.writeToLog $ "actual=" ++ show actual
       ++ " pop. prediction=" ++ show popPrediction
       ++ " pop. error=" ++ show popError
-    let ps' = map (assessAccuracy actual) ps
-    zoom U.uPrevPredictions $ putPS ps'
-
-assessAccuracy
-  :: UIDouble -> (AgentId, Response Action, UIDouble)
-      -> (AgentId, Response Action, UIDouble, UIDouble)
-assessAccuracy actual (n, r, xPredicted)
-  = (n, r, xPredicted, doubleToUI err)
-  where err = abs $ uiToDouble actual - uiToDouble xPredicted
+    U.writeToLog $ "meanError=" ++ show meanError
+      ++ " minError=" ++ show minError
+      ++ " meanError-popError=" ++ show (meanError - popError)
 
 finishRound :: StateT (U.Universe PatternWain) IO ()
 finishRound = do
@@ -423,31 +423,28 @@ rewardPrediction :: StateT Experiment IO ()
 rewardPrediction = do
   a <- use subject
   ps <- zoom (universe . U.uPrevPredictions) getPS
-  case lookup4 (agentId a) ps of
+  case lookup3 (agentId a) ps of
     Nothing ->
       zoom universe . U.writeToLog
         $ "First turn for " ++ agentId a ++ " no prediction reward"
-    Just (r, predicted, err) -> do
+    Just (r, predicted) -> do
       actual <- head <$> zoom (universe . U.uCurrVector) getPS
-      -- TODO: calculate this only once per round
-      let es = map fourthOfFour ps
-      let maxErr = uiToDouble $ maximum es
-      let minErr = uiToDouble $ minimum es
-      let factor | maxErr == minErr = 1
-                 | otherwise       = (maxErr - uiToDouble err)/(maxErr - minErr)
-      accuracyDeltaE <- use (universe . U.uAccuracyDeltaE)
-      let deltaE = factor * accuracyDeltaE
+      let e = abs (uiToDouble actual - uiToDouble predicted)
+      meanError <- zoom (universe . U.uMeanError) getPS
+      minError <- zoom (universe . U.uMeanError) getPS
+      meanDeltaE <- use (universe . U.uMeanAccuracyDeltaE)
+      maxDeltaE <- use (universe . U.uMaxAccuracyDeltaE)
+      let deltaE = (meanDeltaE - maxDeltaE) * (e - minError)
+                     / (meanError - minError) + maxDeltaE
       adjustWainEnergy subject deltaE rPredDeltaE "prediction"
       zoom universe . U.writeToLog $
         agentId a ++ " predicted " ++ show predicted
         ++ ", actual value was " ++ show actual
-        ++ ", error was " ++ show err
-        ++ ", max error was " ++ show maxErr
-        ++ ", min error was " ++ show minErr
+        ++ ", error was " ++ show e
         ++ ", reward is " ++ show deltaE
       assign (summary . rPredictedValue) predicted
       assign (summary . rActualValue) actual
-      assign (summary . rValuePredictionErr) err
+      assign (summary . rValuePredictionErr) (doubleToUI e)
       letSubjectReflect a r
 
 chooseAction3
@@ -493,16 +490,13 @@ analyseClassification ldss w = (dObjLabel, dObjNovelty, dObjNoveltyAdj)
         dObjNoveltyAdj
           = round $ uiToDouble dObjNovelty * fromIntegral (view W.age w)
 
-lookup4 :: Eq a => a -> [(a, b, c, d)] -> Maybe (b, c, d)
-lookup4 k ((a, b, c, d):xs) | a == k    = Just (b, c, d)
-                            | otherwise = lookup4 k xs
-lookup4 _ [] = Nothing
+lookup3 :: Eq a => a -> [(a, b, c)] -> Maybe (b, c)
+lookup3 k ((a, b, c):xs) | a == k    = Just (b, c)
+                            | otherwise = lookup3 k xs
+lookup3 _ [] = Nothing
 
 thirdOfThree :: (a, b, c) -> c
 thirdOfThree (_, _, c) = c
-
-fourthOfFour :: (a, b, c, d) -> d
-fourthOfFour (_, _, _, d) = d
 
 makePrediction :: StateT Experiment IO ()
 makePrediction = do

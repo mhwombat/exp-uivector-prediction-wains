@@ -50,7 +50,8 @@ module ALife.Creatur.Wain.UIVector.Prediction.Universe
     uEnergyBudget,
     uAllowedPopulationRange,
     uPopControl,
-    uAccuracyDeltaE,
+    uMeanAccuracyDeltaE,
+    uMaxAccuracyDeltaE,
     uBaseMetabolismDeltaE,
     uAdjustableMetabolismDeltaE,
     uChildCostFactor,
@@ -74,6 +75,8 @@ module ALife.Creatur.Wain.UIVector.Prediction.Universe
     uPrevVector,
     uNewPredictions,
     uPrevPredictions,
+    uMeanError,
+    uMinError,
     uPrevMetabMetrics,
     uCurrMetabMetrics,
     uPrevMeanMetabMetric,
@@ -140,7 +143,8 @@ data Universe a = Universe
     _uInitialEnergy :: Double,
     _uAllowedPopulationRange :: (Int, Int),
     _uPopControl :: Bool,
-    _uAccuracyDeltaE :: Double,
+    _uMeanAccuracyDeltaE :: Double,
+    _uMaxAccuracyDeltaE :: Double,
     _uBaseMetabolismDeltaE :: Double,
     _uAdjustableMetabolismDeltaE :: Double,
     _uChildCostFactor :: Double,
@@ -162,9 +166,9 @@ data Universe a = Universe
     _uCheckpoints :: [CP.Checkpoint],
     _uCurrVector :: Persistent [UIDouble],
     _uPrevVector :: Persistent [UIDouble],
-    _uPrevPredictions
-      :: Persistent
-        [(AgentId, Response Action, UIDouble, UIDouble)],
+    _uPrevPredictions :: Persistent [(AgentId, Response Action, UIDouble)],
+    _uMeanError :: Persistent Double,
+    _uMinError :: Persistent Double,
     _uNewPredictions :: Persistent [(AgentId, Response Action, UIDouble)],
     _uPrevMetabMetrics :: Persistent [(AgentId, Double)],
     _uCurrMetabMetrics :: Persistent [(AgentId, Double)],
@@ -259,8 +263,11 @@ cAllowedPopulationRange = requiredSetting "allowedPopRange"
 cPopControl :: Setting Bool
 cPopControl = requiredSetting "popControl"
 
-cAccuracyDeltaE :: Setting Double
-cAccuracyDeltaE = requiredSetting "accuracyDeltaE"
+cMeanAccuracyDeltaE :: Setting Double
+cMeanAccuracyDeltaE = requiredSetting "meanAccuracyDeltaE"
+
+cMaxAccuracyDeltaE :: Setting Double
+cMaxAccuracyDeltaE = requiredSetting "maxAccuracyDeltaE"
 
 cBaseMetabolismDeltaE :: Setting Double
 cBaseMetabolismDeltaE = requiredSetting "baseMetabDeltaE"
@@ -359,7 +366,8 @@ config2Universe getSetting =
       _uEnergyBudget = fromIntegral p0 * 0.5,
       _uAllowedPopulationRange = (a', b'),
       _uPopControl = getSetting cPopControl,
-      _uAccuracyDeltaE = getSetting cAccuracyDeltaE,
+      _uMeanAccuracyDeltaE = getSetting cMeanAccuracyDeltaE,
+      _uMaxAccuracyDeltaE = getSetting cMaxAccuracyDeltaE,
       _uBaseMetabolismDeltaE = getSetting cBaseMetabolismDeltaE,
       _uAdjustableMetabolismDeltaE
         = getSetting cAdjustableMetabolismDeltaE,
@@ -386,6 +394,8 @@ config2Universe getSetting =
       _uNewPredictions = mkPersistent [] (workDir ++ "/newPredictions"),
       _uPrevPredictions
         = mkPersistent [] (workDir ++ "/prevPredictions"),
+      _uMeanError = mkPersistent 0 (workDir ++ "/meanError"),
+      _uMinError = mkPersistent 0 (workDir ++ "/minError"),
       _uPrevMetabMetrics
         = mkPersistent [] (workDir ++ "/prevMetabMetrics"),
       _uCurrMetabMetrics
