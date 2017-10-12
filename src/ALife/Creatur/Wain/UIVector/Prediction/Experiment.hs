@@ -434,15 +434,17 @@ rewardPrediction = do
       minError <- zoom (universe . U.uMeanError) getPS
       meanDeltaE <- use (universe . U.uMeanAccuracyDeltaE)
       maxDeltaE <- use (universe . U.uMaxAccuracyDeltaE)
-      let deltaE = (meanDeltaE - maxDeltaE) * (e - minError)
-                     / (meanError - minError) + maxDeltaE
+      let deltaE = if (abs(meanError - minError) < 1e-5)
+                     then meanDeltaE
+                     else (meanDeltaE - maxDeltaE) * (e - minError)
+                            / (meanError - minError) + maxDeltaE
       adjustWainEnergy subject deltaE rPredDeltaE "prediction"
       zoom universe . U.writeToLog $
         agentId a ++ " predicted=" ++ show predicted
         ++ ", actual=" ++ show actual
         ++ ", error e=" ++ show e
-        ++ ", meanDeltaE =" ++ show meanDeltaE
-        ++ ", maxDeltaE =" ++ show maxDeltaE
+        ++ ", meanDeltaE=" ++ show meanDeltaE
+        ++ ", maxDeltaE=" ++ show maxDeltaE
         ++ ", meanError =" ++ show meanError
         ++ ", minError=" ++ show minError
         ++ ", deltaE=" ++ show deltaE
