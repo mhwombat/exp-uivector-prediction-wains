@@ -434,10 +434,11 @@ rewardPrediction = do
       minError <- zoom (universe . U.uMinError) getPS
       meanDeltaE <- use (universe . U.uMeanAccuracyDeltaE)
       maxDeltaE <- use (universe . U.uMaxAccuracyDeltaE)
-      let deltaE = if (abs(meanError - minError) < 1e-5)
-                     then meanDeltaE
-                     else (meanDeltaE - maxDeltaE) * (e - minError)
-                            / (meanError - minError) + maxDeltaE
+      let de = if (abs(meanError - minError) < 1e-5)
+                 then meanDeltaE
+                 else (meanDeltaE - maxDeltaE) * (e - minError)
+                        / (meanError - minError) + maxDeltaE
+      let deltaE = max 0 de
       adjustWainEnergy subject deltaE rPredDeltaE "prediction"
       zoom universe . U.writeToLog $
         agentId a ++ " predicted=" ++ show predicted
@@ -614,8 +615,8 @@ adjustPopControlDeltaE xs =
 
 idealPopControlDeltaE :: Double -> Double -> Double -> Double -> Int -> Double
 idealPopControlDeltaE average total budget initialEnergy pop
-  | average < initialEnergy = (budget - total) / (fromIntegral pop)
-  | otherwise     = initialEnergy - average
+  | total > budget = (budget - total) / (fromIntegral pop)
+  | otherwise      = initialEnergy - average
 
 totalEnergy :: StateT Experiment IO (Double, Double)
 totalEnergy = do
