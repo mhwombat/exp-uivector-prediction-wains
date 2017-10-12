@@ -46,6 +46,7 @@ module ALife.Creatur.Wain.UIVector.Prediction.Universe
     uMaturityRange,
     uMaxAge,
     uInitialPopulationSize,
+    uInitialEnergy,
     uEnergyBudget,
     uAllowedPopulationRange,
     uPopControl,
@@ -136,6 +137,7 @@ data Universe a = Universe
     _uMaxAge :: Int,
     _uInitialPopulationSize :: Int,
     _uEnergyBudget :: Double,
+    _uInitialEnergy :: Double,
     _uAllowedPopulationRange :: (Int, Int),
     _uPopControl :: Bool,
     _uAccuracyDeltaE :: Double,
@@ -248,6 +250,9 @@ cMaxAge = requiredSetting "maxAge"
 cInitialPopulationSize :: Setting Int
 cInitialPopulationSize = requiredSetting "initialPopSize"
 
+cInitialEnergy :: Setting Double
+cInitialEnergy = requiredSetting "initialEnergy"
+
 cAllowedPopulationRange :: Setting (Double, Double)
 cAllowedPopulationRange = requiredSetting "allowedPopRange"
 
@@ -350,6 +355,7 @@ config2Universe getSetting =
       _uMaturityRange = getSetting cMaturityRange,
       _uMaxAge = getSetting cMaxAge,
       _uInitialPopulationSize = p0,
+      _uInitialEnergy = getSetting cInitialEnergy,
       _uEnergyBudget = fromIntegral p0 * 0.5,
       _uAllowedPopulationRange = (a', b'),
       _uPopControl = getSetting cPopControl,

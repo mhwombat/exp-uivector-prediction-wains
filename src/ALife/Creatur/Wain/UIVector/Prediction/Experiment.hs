@@ -603,19 +603,19 @@ adjustPopControlDeltaE xs =
     let (Just average) = Stats.lookup "avg. energy" xs
     let (Just total) = Stats.lookup "total energy" xs
     budget <- use U.uEnergyBudget
+    initialEnergy <- use U.uInitialEnergy
     pop <- U.popSize
-    let c = idealPopControlDeltaE average total budget pop
+    let c = idealPopControlDeltaE average total budget initialEnergy pop
     U.writeToLog $ "Current avg. energy = " ++ show average
     U.writeToLog $ "Current total energy = " ++ show total
     U.writeToLog $ "energy budget = " ++ show budget
     U.writeToLog $ "Adjusted pop. control Δe = " ++ show c
     zoom U.uPopControlDeltaE $ putPS c
 
--- TODO: Make the 0.8 configurable
-idealPopControlDeltaE :: Double -> Double -> Double -> Int -> Double
-idealPopControlDeltaE average total budget pop
-  | average < 0.8 = (budget - total) / (fromIntegral pop)
-  | otherwise     = 0.8 - average
+idealPopControlDeltaE :: Double -> Double -> Double -> Double -> Int -> Double
+idealPopControlDeltaE average total budget initialEnergy pop
+  | average < initialEnergy = (budget - total) / (fromIntegral pop)
+  | otherwise     = initialEnergy - average
 
 totalEnergy :: StateT Experiment IO (Double, Double)
 totalEnergy = do

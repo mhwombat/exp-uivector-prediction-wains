@@ -21,7 +21,8 @@ import ALife.Creatur.Wain.PersistentStatistics (clearStats)
 import ALife.Creatur.Wain.Statistics (Statistic, stats, summarise)
 import ALife.Creatur.Wain.UIVector.Prediction.Universe (Universe(..),
   writeToLog, store, loadUniverse, uClassifierSizeRange,
-  uPredictorSizeRange, uInitialPopulationSize, uStatsFile)
+  uPredictorSizeRange, uInitialPopulationSize, uInitialEnergy,
+  uStatsFile)
 import Control.Lens
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Random (evalRandIO)
@@ -39,9 +40,8 @@ introduceRandomAgent name = do
   agent
     <- liftIO . evalRandIO $
         randomPatternWain name u classifierSize predictorSize
-  -- Make the first generation a little hungry so they start learning
-  -- immediately.
-  let (agent', _) = adjustEnergy 0.8 agent
+  let e = view uInitialEnergy u
+  let (agent', _) = adjustEnergy e agent
   writeToLog $ "GeneratePopulation: Created " ++ agentId agent'
   writeToLog $ "GeneratePopulation: Stats " ++ pretty (stats agent')
   store agent'

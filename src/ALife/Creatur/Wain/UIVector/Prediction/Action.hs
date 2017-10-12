@@ -14,8 +14,6 @@
 module ALife.Creatur.Wain.UIVector.Prediction.Action
   (
     Action,
-    mkAddAction,
-    mkMultiplyAction,
     predict,
     postdict,
     actionDiff,
@@ -33,24 +31,16 @@ import Data.Word (Word16)
 import GHC.Generics (Generic)
 import System.Random (Random, random, randomR)
 
-maxValue :: Int
-maxValue = 1023
+maxIncrement :: Word16
+maxIncrement = 1023
 
-maxEnum :: Int
-maxEnum = 2*maxValue + 1
-
-data Action = Add Word16 | Multiply Word16
+data Action = Add Word16
   deriving (Show, Read, Eq, Ord, Generic)
 
-mkAddAction :: Word16 -> Action
-mkAddAction x
- | x > fromIntegral maxValue = error "argument too big"
- | otherwise                 = Add x
-
-mkMultiplyAction :: Word16 -> Action
-mkMultiplyAction x
- | x > fromIntegral maxValue = error "argument too big"
- | otherwise                 = Multiply x
+mkAction :: Word16 -> Action
+mkAction x
+  | x > maxIncrement = error "argument too big"
+  | otherwise        = Add x
 
 instance Serialize Action
 instance Genetic Action
@@ -58,48 +48,36 @@ instance Diploid Action
 instance Pretty Action
 
 instance Enum Action where
- toEnum n | n <= maxValue  = mkAddAction $ toEnum n
-          | n <= maxEnum  = mkMultiplyAction $ toEnum (n - maxValue - 1)
-          | otherwise = error "argument too big"
- fromEnum (Add x) = fromEnum x
- fromEnum (Multiply x) = maxValue + 1 + fromEnum x
+  toEnum n = mkAction $ toEnum n
+  fromEnum (Add x) = fromEnum x
 
 instance Bounded Action where
   minBound = Add 0
-  maxBound = Multiply (fromIntegral maxValue)
+  maxBound = Add maxIncrement
 
 instance Random Action where
-  randomR (a, b) g = (toEnum n, g')
-    where (n, g') = randomR (fromEnum a, fromEnum b) g
-  random g = (toEnum n, g')
-    where (n, g') = randomR (0, maxEnum) g
+  randomR (Add x, Add y) g = (Add z, g')
+    where (z, g') = randomR (x, y) g
+  random g = (Add z, g')
+    where (z, g') = random g
 
 predict :: Action -> UIDouble -> UIDouble
 predict (Add z) x
-  = forceDoubleToUI $ uiToDouble x + delta
-  where delta = (fromIntegral z)*2/m - 1
-        m = fromIntegral maxValue
-predict (Multiply z) x
- = forceDoubleToUI $ uiToDouble x * factor
- where factor = fromIntegral z / 100
+  = forceDoubleToUI $ (fromIntegral z - mid)*aBit + (uiToDouble x)
+  where aBit = 2 / fromIntegral maxIncrement
+        mid  = fromIntegral maxIncrement / 2
 
 postdict :: UIDouble -> UIDouble -> Action
 postdict x1 x2 = Add z
   where z = round $ (delta + 1)*m/2
         delta = uiToDouble x2 - uiToDouble x1
-        m = fromIntegral maxValue
+        m = fromIntegral maxIncrement
 
 actionDiff :: Action -> Action -> Difference
 actionDiff (Add x) (Add y)
   = doubleToUI $
-      abs (fromIntegral x - fromIntegral y) / fromIntegral maxValue
-actionDiff (Multiply x) (Multiply y)
- = doubleToUI $
-     abs (fromIntegral x - fromIntegral y) / fromIntegral maxValue
-actionDiff _ _ = 1
+      abs (fromIntegral x - fromIntegral y) / fromIntegral maxIncrement
 
 makeActionSimilar :: Action -> UIDouble -> Action -> Action
-makeActionSimilar a r b
-  = toEnum $ adjustIntegral n r m
-  where n = fromEnum a
-        m = fromEnum b
+makeActionSimilar (Add x) r (Add y)
+  = Add $ adjustIntegral x r y
