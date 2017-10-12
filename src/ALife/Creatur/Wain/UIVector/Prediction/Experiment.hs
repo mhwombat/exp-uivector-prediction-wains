@@ -438,10 +438,14 @@ rewardPrediction = do
                      / (meanError - minError) + maxDeltaE
       adjustWainEnergy subject deltaE rPredDeltaE "prediction"
       zoom universe . U.writeToLog $
-        agentId a ++ " predicted " ++ show predicted
-        ++ ", actual value was " ++ show actual
-        ++ ", error was " ++ show e
-        ++ ", reward is " ++ show deltaE
+        agentId a ++ " predicted=" ++ show predicted
+        ++ ", actual=" ++ show actual
+        ++ ", error e=" ++ show e
+        ++ ", meanDeltaE =" ++ show meanDeltaE
+        ++ ", maxDeltaE =" ++ show maxDeltaE
+        ++ ", meanError =" ++ show meanError
+        ++ ", minError=" ++ show minError
+        ++ ", deltaE=" ++ show deltaE
       assign (summary . rPredictedValue) predicted
       assign (summary . rActualValue) actual
       assign (summary . rValuePredictionErr) (doubleToUI e)
