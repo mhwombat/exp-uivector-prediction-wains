@@ -601,25 +601,19 @@ adjustPopControlDeltaE
   :: [Stats.Statistic] -> StateT (U.Universe PatternWain) IO ()
 adjustPopControlDeltaE xs =
   unless (null xs) $ do
-    let (Just average) = Stats.lookup "avg. adult energy" xs
     let (Just total) = Stats.lookup "total energy" xs
     budget <- use U.uEnergyBudget
-    initialEnergy <- use U.uInitialEnergy
     pop <- U.popSize
-    let c = idealPopControlDeltaE average total budget initialEnergy pop
-    U.writeToLog $ "Current avg. energy = " ++ show average
+    let c = idealPopControlDeltaE total budget pop
     U.writeToLog $ "Current total energy = " ++ show total
     U.writeToLog $ "energy budget = " ++ show budget
     U.writeToLog $ "Adjusted pop. control Δe = " ++ show c
     zoom U.uPopControlDeltaE $ putPS c
 
 idealPopControlDeltaE
-  :: Double -> Double -> Double -> Double -> Int -> Double
-idealPopControlDeltaE average total budget initialEnergy pop
-  -- We need to ensure that the population stays in bounds
-  | average < initialEnergy = (budget - total) / (fromIntegral pop)
-  -- But if energy is too high, wains have no incentive to learn
-  | otherwise               = initialEnergy - average
+  :: Double -> Double -> Int -> Double
+idealPopControlDeltaE total budget pop
+  = (budget - total) / (fromIntegral pop)
 
 totalEnergy :: StateT Experiment IO (Double, Double)
 totalEnergy = do

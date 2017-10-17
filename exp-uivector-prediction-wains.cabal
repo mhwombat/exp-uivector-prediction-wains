@@ -1,5 +1,5 @@
 name:                exp-uivector-prediction-wains
-version:             1.7.15
+version:             1.7.17
 synopsis:            Agent for predicting the future.
 description:         ALife agent that competes with other
                      agents to predict the future.
