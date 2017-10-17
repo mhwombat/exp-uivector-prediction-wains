@@ -609,9 +609,11 @@ adjustPopControlDeltaE xs =
     U.writeToLog $ "Adjusted pop. control Δe = " ++ show c
     zoom U.uPopControlDeltaE $ putPS c
 
+-- TODO: Make hard-coded values configurable
 idealPopControlDeltaE :: Double -> Int -> Int -> Double
 idealPopControlDeltaE averageEnergy pop desiredPop
-  = averageEnergy*(p0 - p)/p
+  | averageEnergy > 0.7 = 0.7 - averageEnergy
+  | otherwise = averageEnergy*(p0 - p)/p
   where p0 = fromIntegral desiredPop
         p = fromIntegral pop
 
