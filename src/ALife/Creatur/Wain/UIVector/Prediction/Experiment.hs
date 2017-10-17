@@ -613,10 +613,13 @@ adjustPopControlDeltaE xs =
     U.writeToLog $ "Adjusted pop. control Δe = " ++ show c
     zoom U.uPopControlDeltaE $ putPS c
 
-idealPopControlDeltaE :: Double -> Double -> Double -> Double -> Int -> Double
+idealPopControlDeltaE
+  :: Double -> Double -> Double -> Double -> Int -> Double
 idealPopControlDeltaE average total budget initialEnergy pop
-  | total > budget = (budget - total) / (fromIntegral pop)
-  | otherwise      = initialEnergy - average
+  -- We need to ensure that the population stays in bounds
+  | average < initialEnergy = (budget - total) / (fromIntegral pop)
+  -- But if energy is too high, wains have no incentive to learn
+  | otherwise               = initialEnergy - average
 
 totalEnergy :: StateT Experiment IO (Double, Double)
 totalEnergy = do
