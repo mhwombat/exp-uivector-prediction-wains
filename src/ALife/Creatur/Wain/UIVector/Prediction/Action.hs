@@ -1,7 +1,7 @@
 ------------------------------------------------------------------------
 -- |
 -- Module      :  ALife.Creatur.Wain.UIVector.Prediction.Action
--- Copyright   :  (c) Amy de Buitléir 2012-2016
+-- Copyright   :  (c) Amy de Buitléir 2012-2017
 -- License     :  BSD-style
 -- Maintainer  :  amy@nualeargais.ie
 -- Stability   :  experimental
@@ -22,7 +22,7 @@ module ALife.Creatur.Wain.UIVector.Prediction.Action
 
 import ALife.Creatur.Genetics.BRGCWord8 (Genetic)
 import ALife.Creatur.Genetics.Diploid (Diploid)
-import ALife.Creatur.Wain.Pretty (Pretty)
+import ALife.Creatur.Wain.Pretty (Pretty(..))
 import ALife.Creatur.Wain.GeneticSOM (Difference)
 import ALife.Creatur.Wain.UnitInterval (UIDouble, forceDoubleToUI,
   uiToDouble, doubleToUI, adjustIntegral)
@@ -45,7 +45,12 @@ mkAction x
 instance Serialize Action
 instance Genetic Action
 instance Diploid Action
-instance Pretty Action
+
+instance Pretty Action where
+  pretty a
+    | d >= 0     = '+' : pretty d
+    | otherwise = pretty d
+    where d = toDelta a
 
 instance Enum Action where
   toEnum n = mkAction $ toEnum n
@@ -61,11 +66,14 @@ instance Random Action where
   random g = (Add z, g')
     where (z, g') = random g
 
-predict :: Action -> UIDouble -> UIDouble
-predict (Add z) x
-  = forceDoubleToUI $ (fromIntegral z - mid)*aBit + (uiToDouble x)
+toDelta :: Action -> Double
+toDelta (Add z) = (fromIntegral z - mid)*aBit
   where aBit = 2 / fromIntegral maxIncrement
         mid  = fromIntegral maxIncrement / 2
+
+predict :: Action -> UIDouble -> UIDouble
+predict a x
+  = forceDoubleToUI $ (uiToDouble x) + (toDelta a)
 
 postdict :: UIDouble -> UIDouble -> Action
 postdict x1 x2 = Add z

@@ -1,7 +1,7 @@
 ------------------------------------------------------------------------
 -- |
 -- Module      :  ALife.Creatur.Wain.UIVector.Prediction.Experiment
--- Copyright   :  (c) Amy de Buitléir 2012-2016
+-- Copyright   :  (c) Amy de Buitléir 2012-2017
 -- License     :  BSD-style
 -- Maintainer  :  amy@nualeargais.ie
 -- Stability   :  experimental
@@ -459,9 +459,13 @@ chooseAction3
     -> StateT (U.Universe PatternWain) IO
         (UIDouble, Int, Response Action, PatternWain)
 chooseAction3 w vs = do
+  whenM (use U.uShowClassifierModels) $ do
+    U.writeToLog "begin classifier models"
+    describeClassifierModels w
+    U.writeToLog "end classifier models"
   whenM (use U.uShowPredictorModels) $ do
     U.writeToLog "begin predictor models"
-    describeModels w
+    describePredictorModels w
     U.writeToLog "end predictor models"
   let (ldss, sps, rplos, aohs, r, w') = W.chooseAction [vs] w
   let (_, dObjNovelty, dObjNoveltyAdj)
@@ -524,9 +528,16 @@ makePrediction = do
   let ps' = (agentId a, r, xPredicted) : ps
   zoom (universe . U.uNewPredictions) $ putPS ps'
 
-describeModels
+describeClassifierModels
   :: PatternWain -> StateT (U.Universe PatternWain) IO ()
-describeModels w = mapM_ (U.writeToLog . f) ms
+describeClassifierModels w = mapM_ (U.writeToLog . f) ms
+  where ms = toList . modelMap . view (W.brain . classifier) $ w
+        f (l, r) = view W.name w ++ "'s classifier model " ++ show l
+                     ++ "=" ++ pretty r
+
+describePredictorModels
+  :: PatternWain -> StateT (U.Universe PatternWain) IO ()
+describePredictorModels w = mapM_ (U.writeToLog . f) ms
   where ms = toList . modelMap . view (W.brain . predictor) $ w
         f (l, r) = view W.name w ++ "'s predictor model " ++ show l
                      ++ "=" ++ pretty r

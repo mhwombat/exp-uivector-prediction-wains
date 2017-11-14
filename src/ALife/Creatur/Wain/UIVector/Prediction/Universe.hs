@@ -1,7 +1,7 @@
 ------------------------------------------------------------------------
 -- |
 -- Module      :  ALife.Creatur.Wain.UIVector.Prediction.Universe
--- Copyright   :  (c) Amy de Buitléir 2012-2016
+-- Copyright   :  (c) Amy de Buitléir 2012-2017
 -- License     :  BSD-style
 -- Maintainer  :  amy@nualeargais.ie
 -- Stability   :  experimental
@@ -32,12 +32,12 @@ module ALife.Creatur.Wain.UIVector.Prediction.Universe
     uStatsFile,
     uRawStatsFile,
     uDataSource,
+    uShowClassifierModels,
     uShowPredictorModels,
     uShowPredictions,
     uShowScenarioReport,
     uShowResponseReport,
     uShowDecisionReport,
-    uGenFmris,
     uSleepBetweenTasks,
     uVectorLength,
     uClassifierSizeRange,
@@ -47,7 +47,6 @@ module ALife.Creatur.Wain.UIVector.Prediction.Universe
     uMaxAge,
     uInitialPopulationSize,
     uInitialEnergy,
-    uEnergyBudget,
     uAllowedPopulationRange,
     uPopControl,
     uMeanAccuracyDeltaE,
@@ -125,12 +124,12 @@ data Universe a = Universe
     _uStatsFile :: FilePath,
     _uRawStatsFile :: FilePath,
     _uDataSource :: DataSource,
+    _uShowClassifierModels :: Bool,
     _uShowPredictorModels :: Bool,
     _uShowPredictions :: Bool,
     _uShowScenarioReport :: Bool,
     _uShowResponseReport :: Bool,
     _uShowDecisionReport :: Bool,
-    _uGenFmris :: Bool,
     _uSleepBetweenTasks :: Int,
     _uVectorLength :: Int,
     _uClassifierSizeRange :: (Word64, Word64),
@@ -139,7 +138,6 @@ data Universe a = Universe
     _uMaturityRange :: (Word16, Word16),
     _uMaxAge :: Int,
     _uInitialPopulationSize :: Int,
-    _uEnergyBudget :: Double,
     _uInitialEnergy :: Double,
     _uAllowedPopulationRange :: (Int, Int),
     _uPopControl :: Bool,
@@ -210,6 +208,9 @@ cDataFile = requiredSetting "dataFile"
 cCacheSize :: Setting Int
 cCacheSize = requiredSetting "cacheSize"
 
+cShowClassifierModels :: Setting Bool
+cShowClassifierModels = requiredSetting "showClassifierModels"
+
 cShowPredictorModels :: Setting Bool
 cShowPredictorModels = requiredSetting "showPredictorModels"
 
@@ -224,9 +225,6 @@ cShowResponseReport = requiredSetting "showResponseReport"
 
 cShowDecisionReport :: Setting Bool
 cShowDecisionReport = requiredSetting "showDecisionReport"
-
-cGenFmris :: Setting Bool
-cGenFmris = requiredSetting "genFMRIs"
 
 cSleepBetweenTasks :: Setting Int
 cSleepBetweenTasks = requiredSetting "sleepTimeBetweenTasks"
@@ -348,12 +346,12 @@ config2Universe getSetting =
       _uStatsFile = workDir ++ "/statsFile",
       _uRawStatsFile = workDir ++ "/rawStatsFile",
       _uDataSource = mkDataSource dataFile readCounterFile,
+      _uShowClassifierModels = getSetting cShowClassifierModels,
       _uShowPredictorModels = getSetting cShowPredictorModels,
       _uShowPredictions = getSetting cShowPredictions,
       _uShowScenarioReport = getSetting cShowScenarioReport,
       _uShowResponseReport = getSetting cShowResponseReport,
       _uShowDecisionReport = getSetting cShowDecisionReport,
-      _uGenFmris = getSetting cGenFmris,
       _uSleepBetweenTasks = getSetting cSleepBetweenTasks,
       _uVectorLength = n,
       _uClassifierSizeRange = getSetting cClassifierSizeRange,
@@ -363,7 +361,6 @@ config2Universe getSetting =
       _uMaxAge = getSetting cMaxAge,
       _uInitialPopulationSize = p0,
       _uInitialEnergy = e0,
-      _uEnergyBudget = fromIntegral p0 * e0,
       _uAllowedPopulationRange = (a', b'),
       _uPopControl = getSetting cPopControl,
       _uMeanAccuracyDeltaE = getSetting cMeanAccuracyDeltaE,
