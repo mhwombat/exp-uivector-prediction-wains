@@ -320,29 +320,54 @@ run' = do
   report $ "---------- " ++ agentId a ++ "'s turn ----------"
   report $ "At beginning of turn, " ++ agentId a
     ++ "'s summary: " ++ pretty (customStats a)
+  wombat "A1"
   rewardPrediction
+  wombat "A2"
   runMetabolism
+  wombat "A3"
   autoPopControl <- use (universe . U.uPopControl)
+  wombat "A4"
   when autoPopControl applyPopControl
   subject %= W.incAge
+  wombat "A5"
   maybeFlirt
+  wombat "A6"
   makePrediction
+  wombat "A7"
   a' <- use subject
   -- assign (summary.rNetDeltaE) (energy a' - energy a)
   unless (isAlive a') $ assign (summary.rDeathCount) 1
+  wombat "A8"
   summary %= fillInSummary
+  wombat "A9"
   (ef, ecf) <- totalEnergy
+  wombat "A10"
   balanceEnergyEquation e0 ec0 ef ecf
+  wombat "A11"
   updateChildren
+  wombat "A12"
   measureMetabolism
+  wombat "A13"
   killIfTooOld
+  wombat "A14"
   agentStats <- ((customStats a' ++) . summaryStats) <$> use summary
+  wombat "A15"
   report $ "At end of turn, " ++ agentId a
     ++ "'s summary: " ++ pretty agentStats
+  wombat "A16"
   rsf <- use (universe . U.uRawStatsFile)
+  wombat "A17"
   zoom universe $ writeRawStats (agentId a) rsf agentStats
+  wombat "A18"
   sf <- use (universe . U.uStatsFile)
+  wombat "A19"
   zoom universe $ updateStats agentStats sf
+  wombat "A20"
+
+wombat :: String -> StateT Experiment IO ()
+wombat tag = do
+  w <- use subject
+  report $ "DEBUG " ++ tag ++ " predictor size=" ++ show (size . modelMap . view (W.brain . predictor) $ w)
 
 customStats :: PatternWain -> [Stats.Statistic]
 customStats w = Stats.stats w
