@@ -369,6 +369,13 @@ wombat tag = do
   w <- use subject
   report $ "DEBUG " ++ tag ++ " predictor size=" ++ show (size . modelMap . view (W.brain . predictor) $ w)
 
+wombat2 :: String -> StateT Experiment IO ()
+wombat2 tag = do
+  w <- use subject
+  zoom universe . U.writeToLog $ "DEBUG " ++ tag ++ " begin predictor models"
+  zoom universe $ describePredictorModels w
+  zoom universe . U.writeToLog $ "DEBUG " ++ tag ++ " end predictor models"
+
 customStats :: PatternWain -> [Stats.Statistic]
 customStats w = Stats.stats w
   ++ [
@@ -477,7 +484,9 @@ rewardPrediction = do
       assign (summary . rPredictedValue) predicted
       assign (summary . rActualValue) actual
       assign (summary . rValuePredictionErr) (doubleToUI e)
+      wombat2 "B1"
       letSubjectReflect a r
+      wombat2 "B2"
 
 chooseAction3
   :: PatternWain -> [UIDouble]
