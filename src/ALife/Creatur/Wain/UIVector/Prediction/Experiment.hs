@@ -71,7 +71,7 @@ import Control.Monad.Random (Rand, RandomGen, getRandom, getRandomR,
   getRandomRs, getRandoms, evalRandIO)
 import Control.Monad.State.Lazy (StateT, execStateT, get, put)
 import Data.List (intercalate, minimumBy, lookup)
-import Data.Map (toList, size)
+import Data.Map (toList)
 import Data.Ord (comparing)
 import Data.Version (showVersion)
 import Data.Word (Word64)
@@ -320,61 +320,29 @@ run' = do
   report $ "---------- " ++ agentId a ++ "'s turn ----------"
   report $ "At beginning of turn, " ++ agentId a
     ++ "'s summary: " ++ pretty (customStats a)
-  wombat "A1"
   rewardPrediction
-  wombat "A2"
   runMetabolism
-  wombat "A3"
   autoPopControl <- use (universe . U.uPopControl)
-  wombat "A4"
   when autoPopControl applyPopControl
   subject %= W.incAge
-  wombat "A5"
   maybeFlirt
-  wombat "A6"
   makePrediction
-  wombat "A7"
   a' <- use subject
   -- assign (summary.rNetDeltaE) (energy a' - energy a)
   unless (isAlive a') $ assign (summary.rDeathCount) 1
-  wombat "A8"
   summary %= fillInSummary
-  wombat "A9"
   (ef, ecf) <- totalEnergy
-  wombat "A10"
   balanceEnergyEquation e0 ec0 ef ecf
-  wombat "A11"
   updateChildren
-  wombat "A12"
   measureMetabolism
-  wombat "A13"
   killIfTooOld
-  wombat "A14"
   agentStats <- ((customStats a' ++) . summaryStats) <$> use summary
-  wombat "A15"
   report $ "At end of turn, " ++ agentId a
     ++ "'s summary: " ++ pretty agentStats
-  wombat "A16"
   rsf <- use (universe . U.uRawStatsFile)
-  wombat "A17"
   zoom universe $ writeRawStats (agentId a) rsf agentStats
-  wombat "A18"
   sf <- use (universe . U.uStatsFile)
-  wombat "A19"
   zoom universe $ updateStats agentStats sf
-  wombat "A20"
-
-wombat :: String -> StateT Experiment IO ()
-wombat tag = do
-  w <- use subject
-  report $ "DEBUG " ++ tag ++ " predictor size=" ++ show (size . modelMap . view (W.brain . predictor) $ w)
-
-wombat2 :: String -> StateT Experiment IO ()
-wombat2 tag = do
-  w <- use subject
-  zoom universe . U.writeToLog $ "DEBUG " ++ tag ++ " begin predictor models"
-  zoom universe $ describePredictorModels w
-  zoom universe . U.writeToLog $ "DEBUG " ++ tag ++ " end predictor models"
 
 customStats :: PatternWain -> [Stats.Statistic]
 customStats w = Stats.stats w
@@ -484,16 +452,13 @@ rewardPrediction = do
       assign (summary . rPredictedValue) predicted
       assign (summary . rActualValue) actual
       assign (summary . rValuePredictionErr) (doubleToUI e)
-      wombat2 "B1"
       letSubjectReflect a r
-      wombat2 "B2"
 
 chooseAction3
   :: PatternWain -> [UIDouble]
     -> StateT (U.Universe PatternWain) IO
         (UIDouble, Int, Response Action, PatternWain)
 chooseAction3 w vs = do
-  U.writeToLog $ "DEBUG 1 predictor size=" ++ show (size . modelMap . view (W.brain . predictor) $ w)
   whenM (use U.uShowClassifierModels) $ do
     U.writeToLog "begin classifier models"
     describeClassifierModels w
@@ -503,7 +468,6 @@ chooseAction3 w vs = do
     describePredictorModels w
     U.writeToLog "end predictor models"
   let (ldss, sps, rplos, aohs, r, w') = W.chooseAction [vs] w
-  U.writeToLog $ "DEBUG 2 predictor size=" ++ show (size . modelMap . view (W.brain . predictor) $ w')
   let (_, dObjNovelty, dObjNoveltyAdj)
           = analyseClassification ldss w
   whenM (use U.uShowPredictions) $ do
