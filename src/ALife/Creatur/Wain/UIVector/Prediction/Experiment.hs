@@ -41,8 +41,7 @@ import qualified ALife.Creatur.Wain.Predictor as P
 import ALife.Creatur.Wain.GeneticSOM (RandomLearningParams(..),
   randomLearningFunction, schemaQuality, modelMap, numModels,
   tweaker)
-import ALife.Creatur.Wain.PlusMinusOne (PM1Double, pm1ToDouble,
-  doubleToPM1)
+import ALife.Creatur.Wain.PlusMinusOne (PM1Double, pm1ToDouble)
 import ALife.Creatur.Wain.PersistentStatistics (updateStats, readStats,
   clearStats)
 import qualified ALife.Creatur.Wain.UIVector.Prediction.Universe as U
@@ -663,7 +662,7 @@ letSubjectReflect
 letSubjectReflect wBefore r = do
   w <- use subject
   p <- zoom (universe . U.uPrevVector) getPS
-  let (w', err) = W.reflect [p] r wBefore w
+  let (w', rReflect, err) = W.reflect [p] r wBefore w
   v1 <- zoom (universe . U.uPrevVector) getPS
   let x1 = head v1
   x2 <- head <$> zoom (universe . U.uCurrVector) getPS
@@ -671,11 +670,7 @@ letSubjectReflect wBefore r = do
   let (_, _, _, _, w'') = W.imprint [v1] a w'
   assign subject w''
   assign (summary . rRewardPredictionErr) err
-  let cBefore = W.condition wBefore
-  let cAfter = W.condition w
-  let osActual = map doubleToPM1 $ zipWith (-) (map uiToDouble cAfter)
-                   (map uiToDouble cBefore)
-  report $ "Outcome=" ++ pretty osActual
+  report $ "Reflecting: " ++ pretty rReflect
 
 writeRawStats
   :: String -> FilePath -> [Stats.Statistic]
