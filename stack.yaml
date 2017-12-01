@@ -40,11 +40,11 @@ packages:
 - '.'
 - location:
     git: git@github.com:mhwombat/creatur.git
-    commit: master
+    commit: 96effaf4ba53d696214bd163620c981b231c4b51
   extra-dep: true
 - location:
     git: git@github.com:mhwombat/creatur-wains.git
-    commit: master
+    commit: 96a0fd896b68b96258f299866ba22e6a11af5e1f
   extra-dep: true
 - location:
     git: git@github.com:mhwombat/creatur-wains-test-utils.git
@@ -52,7 +52,7 @@ packages:
   extra-dep: true
 - location:
     git: git@github.com:mhwombat/creatur-uivector-wains.git
-    commit: master
+    commit: e6f0e54ce92299cbc86fb1ddda7837bb3ac2502d
   extra-dep: true
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
