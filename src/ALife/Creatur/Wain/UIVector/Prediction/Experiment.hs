@@ -71,7 +71,7 @@ import Control.Monad.Random (Rand, RandomGen, getRandom, getRandomR,
   getRandomRs, getRandoms, evalRandIO)
 import Control.Monad.State.Lazy (StateT, execStateT, get, put)
 import Data.List (intercalate, minimumBy, lookup)
-import Data.Map (toList)
+import Data.Map (toList, size)
 import Data.Ord (comparing)
 import Data.Version (showVersion)
 import Data.Word (Word64)
@@ -412,11 +412,11 @@ runMetabolism = do
     Nothing ->
       zoom universe . U.writeToLog
         $ "First turn for " ++ agentId a ++ " no metabolism cost"
-    Just size -> do
+    Just n -> do
       bmc <- use (universe . U.uBaseMetabolismDeltaE)
       cpcm <- use (universe . U.uAdjustableMetabolismDeltaE)
       meanSize <- zoom (universe . U.uPrevMeanMetabMetric) getPS
-      let deltaE = bmc + cpcm * size / meanSize
+      let deltaE = bmc + cpcm * n / meanSize
       adjustWainEnergy subject deltaE rMetabolismDeltaE "metabolism"
 
 rewardPrediction :: StateT Experiment IO ()
@@ -459,6 +459,7 @@ chooseAction3
     -> StateT (U.Universe PatternWain) IO
         (UIDouble, Int, Response Action, PatternWain)
 chooseAction3 w vs = do
+  U.writeToLog $ "DEBUG 1 predictor size=" ++ show (size . modelMap . view (W.brain . predictor) $ w)
   whenM (use U.uShowClassifierModels) $ do
     U.writeToLog "begin classifier models"
     describeClassifierModels w
@@ -468,6 +469,7 @@ chooseAction3 w vs = do
     describePredictorModels w
     U.writeToLog "end predictor models"
   let (ldss, sps, rplos, aohs, r, w') = W.chooseAction [vs] w
+  U.writeToLog $ "DEBUG 2 predictor size=" ++ show (size . modelMap . view (W.brain . predictor) $ w')
   let (_, dObjNovelty, dObjNoveltyAdj)
           = analyseClassification ldss w
   whenM (use U.uShowPredictions) $ do
@@ -488,8 +490,8 @@ chooseAction3 w vs = do
     U.writeToLog "begin decision report"
     mapM_ U.writeToLog $ decisionReport aohs
     U.writeToLog "end decision report"
-  U.writeToLog $ agentId w ++ " chooses to " ++ show (view action r)
-    ++ " predicting the outcomes " ++ show (view outcomes r)
+  U.writeToLog $ agentId w ++ " chooses to " ++ pretty (view action r)
+    ++ " predicting the outcomes " ++ pretty (view outcomes r)
   return (dObjNovelty, dObjNoveltyAdj, r, w')
 
 analyseClassification
@@ -547,7 +549,7 @@ describeOutcomes
     -> StateT (U.Universe PatternWain) IO ()
 describeOutcomes w = mapM_ (U.writeToLog . f)
   where f (r, _, _, l, _) = view W.name w ++ "'s predicted outcome of "
-                     ++ show (view action r) ++ " is "
+                     ++ pretty (view action r) ++ " is "
                      ++ intercalate " " (map (printf "%.3f" . pm1ToDouble) (view outcomes r))
                      ++ " from model " ++ show l
 

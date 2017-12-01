@@ -44,7 +44,7 @@ packages:
   extra-dep: true
 - location:
     git: git@github.com:mhwombat/creatur-wains.git
-    commit: 354634b5c328c8c75fa379201669a01ca421cdb2
+    commit: 9e451baba125b7b87a3299cfe1c59b32b233dc18
   extra-dep: true
 - location:
     git: git@github.com:mhwombat/creatur-wains-test-utils.git
