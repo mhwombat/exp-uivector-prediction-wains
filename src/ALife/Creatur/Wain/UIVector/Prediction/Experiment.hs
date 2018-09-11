@@ -50,7 +50,6 @@ import ALife.Creatur.Wain.Raw (raw)
 import ALife.Creatur.Wain.Response (Response, action, outcomes)
 import ALife.Creatur.Wain.SimpleMuser (SimpleMuser, makeMuser)
 import qualified ALife.Creatur.Wain.Statistics as Stats
-import ALife.Creatur.Wain.Statistics (summarise)
 import ALife.Creatur.Wain.UIVector.Prediction.Action (Action,
   predict, postdict)
 import ALife.Creatur.Wain.UIVector.Prediction.DataSource (endOfData,
@@ -82,7 +81,7 @@ import Text.Printf (printf)
 
 versionInfo :: String
 versionInfo
-  = "exp-prediction-wains-" ++ showVersion version
+  = "exp-uivector-prediction-wains-" ++ showVersion version
       ++ ", compiled with " ++ UW.packageVersion
       ++ ", " ++ W.packageVersion
       ++ ", " ++ ALife.Creatur.programVersion
@@ -250,7 +249,6 @@ evaluateErrors = do
     let errors = map (\e -> abs (actual - e)) predictions
     let popPrediction = mean predictions
     let popError = abs (actual - popPrediction)
-    -- TODO: will meanError always equal popError?
     let meanError = mean errors
     let minError = minimum errors
     zoom U.uMeanError $ putPS meanError
@@ -269,7 +267,7 @@ finishRound = do
   calculateMeanMetabMetric
   f <- use U.uStatsFile
   xss <- readStats f
-  let yss = summarise xss
+  let yss = Stats.summarise xss
   printStats yss
   let zs = concat yss
   adjustPopControlDeltaE zs
@@ -513,7 +511,7 @@ makePrediction :: StateT Experiment IO ()
 makePrediction = do
   a <- use subject
   dObj <- zoom (universe . U.uCurrVector) getPS
-  (dObjNovelty, dObjNoveltyAdj, r, a') 
+  (dObjNovelty, dObjNoveltyAdj, r, a')
     <- zoom universe $ chooseAction3 a dObj
   assign (summary.rVectorNovelty) dObjNovelty
   assign (summary.rVectorAdjustedNovelty) dObjNoveltyAdj
@@ -577,7 +575,7 @@ flirt = do
     then do
       report $ agentId a ++ " and " ++ agentId b ++ " mated"
       report $ "Contribution to child: " ++
-        agentId a ++ "'s share is " ++ show aMatingDeltaE ++ " " ++ 
+        agentId a ++ "'s share is " ++ show aMatingDeltaE ++ " " ++
         agentId b ++ "'s share is " ++ show bMatingDeltaE
       assign subject a'
       assign other b'

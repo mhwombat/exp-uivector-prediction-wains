@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------
 -- |
--- Module      :  ALife.Creatur.Wain.UIVector.Prediction.Daemon
+-- Module      :  Main
 -- Copyright   :  (c) Amy de Buitléir 2013-2017
 -- License     :  BSD-style
 -- Maintainer  :  amy@nualeargais.ie
@@ -17,7 +17,7 @@ module Main where
 import ALife.Creatur.Daemon (CreaturDaemon(..), Job(..),
   simpleDaemon, launch)
 import ALife.Creatur.Task (runInteractingAgents, simpleJob)
-import ALife.Creatur.Wain.UIVector.Prediction.Experiment (PatternWain, run, 
+import ALife.Creatur.Wain.UIVector.Prediction.Experiment (PatternWain, run,
   startRound, finishRound, versionInfo)
 import ALife.Creatur.Wain.UIVector.Prediction.Universe (Universe(..),
   writeToLog, loadUniverse, uSleepBetweenTasks, uExperimentName)
@@ -49,13 +49,11 @@ shutdownHandler programName u = do
 main :: IO ()
 main = do
   u <- loadUniverse
-  let program = run
   let message = versionInfo ++ ", configuration=" ++ show u
   let j = simpleJob
-        { task=runInteractingAgents program startRound finishRound,
+        { task=runInteractingAgents run startRound finishRound,
           onStartup=startupHandler message,
           onShutdown=shutdownHandler message,
           sleepTime=view uSleepBetweenTasks u }
   let d = (simpleDaemon j u) { name=Just . view uExperimentName $ u }
-  let cd = CreaturDaemon d j
-  launch cd
+  launch $ CreaturDaemon d j

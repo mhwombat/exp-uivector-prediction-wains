@@ -10,8 +10,6 @@
 -- Runs the QuickCheck tests.
 --
 ------------------------------------------------------------------------
-module Main where
-
 import ALife.Creatur.Wain.UIVector.Prediction.ActionQC (test)
 import ALife.Creatur.Wain.UIVector.Prediction.ExperimentQC (test)
 

@@ -1,253 +1,166 @@
-name:                exp-uivector-prediction-wains
-version:             1.7.25
-synopsis:            Agent for predicting the future.
-description:         ALife agent that competes with other
-                     agents to predict the future.
-homepage:            https://github.com/mhwombat/exp-uivector-prediction-wains#readme
-bug-reports:         https://github.com/mhwombat/exp-uivector-prediction-wains/issues
-license:             BSD3
-license-file:        LICENSE
-author:              Amy de Buitléir
-maintainer:          amy@nualeargais.ie
-copyright:           (c) 2013-2017 Amy de Buitléir
-category:            AI
-build-type:          Simple
--- extra-source-files:
-cabal-version:       >=1.10
+-- This file has been generated from package.yaml by hpack version 0.28.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 19181fc2c22469cc787d687ca3f169a9769d036a491cba74d608682a02f7077a
 
-executable exp-uivector-prediction-daemon
-  main-is:          ALife/Creatur/Wain/UIVector/Prediction/Daemon.hs
-  ghc-options:      -Wall -Werror -O2 -rtsopts -threaded
-  build-depends:    app-settings,
-                    array,
-                    base,
-                    bytestring,
-                    cereal,
-                    colour,
-                    cond,
-                    containers,
-                    creatur,
-                    creatur-uivector-wains,
-                    creatur-wains,
-                    deepseq,
-                    directory,
-                    filepath,
-                    hdaemonize,
-                    lens,
-                    MonadRandom,
-                    mtl,
-                    old-locale,
-                    random,
-                    som,
-                    split,
-                    text,
-                    time,
-                    transformers,
-                    unix,
-                    vector,
-                    zlib
-  hs-source-dirs:   src
-  other-modules:    ALife.Creatur.Wain.UIVector.Prediction.Action
-                    ALife.Creatur.Wain.UIVector.Prediction.DataSource
-                    ALife.Creatur.Wain.UIVector.Prediction.Experiment
-                    ALife.Creatur.Wain.UIVector.Prediction.ResponseTweaker
-                    ALife.Creatur.Wain.UIVector.Prediction.Universe
-                    Paths_exp_uivector_prediction_wains
-
-executable exp-uivector-prediction-interactive
-  main-is:          ALife/Creatur/Wain/UIVector/Prediction/Interactive.hs
-  ghc-options:      -Wall -Werror -O2 -rtsopts -fprof-auto
-  build-depends:    app-settings,
-                    array,
-                    base,
-                    bytestring,
-                    cereal,
-                    colour,
-                    cond,
-                    containers,
-                    creatur,
-                    creatur-uivector-wains,
-                    creatur-wains,
-                    deepseq,
-                    directory,
-                    filepath,
-                    hdaemonize,
-                    lens,
-                    MonadRandom,
-                    mtl,
-                    old-locale,
-                    random,
-                    som,
-                    split,
-                    text,
-                    time,
-                    transformers,
-                    unix,
-                    vector,
-                    zlib
-  hs-source-dirs:   src
-  other-modules:    ALife.Creatur.Wain.UIVector.Prediction.Action
-                    ALife.Creatur.Wain.UIVector.Prediction.DataSource
-                    ALife.Creatur.Wain.UIVector.Prediction.Experiment
-                    ALife.Creatur.Wain.UIVector.Prediction.ResponseTweaker
-                    ALife.Creatur.Wain.UIVector.Prediction.Universe
-                    Paths_exp_uivector_prediction_wains
-
-executable exp-uivector-prediction-init
-  main-is:          ALife/Creatur/Wain/UIVector/Prediction/GeneratePopulation.hs
-  ghc-options:      -Wall -Werror -O2 -rtsopts -threaded
-  build-depends:
-                    app-settings,
-                    array,
-                    base,
-                    cereal,
-                    cond,
-                    colour,
-                    containers,
-                    creatur,
-                    creatur-uivector-wains,
-                    creatur-wains,
-                    deepseq,
-                    directory,
-                    filepath,
-                    lens,
-                    MonadRandom,
-                    mtl,
-                    old-locale,
-                    random,
-                    som,
-                    split,
-                    time,
-                    transformers,
-                    unix,
-                    vector,
-                    zlib
-  hs-source-dirs:   src
-  other-modules:    ALife.Creatur.Wain.UIVector.Prediction.Action
-                    ALife.Creatur.Wain.UIVector.Prediction.DataSource
-                    ALife.Creatur.Wain.UIVector.Prediction.Experiment
-                    ALife.Creatur.Wain.UIVector.Prediction.ResponseTweaker
-                    ALife.Creatur.Wain.UIVector.Prediction.Universe
-                    Paths_exp_uivector_prediction_wains
-
-executable exp-uivector-prediction-examine
-  main-is:          ALife/Creatur/Wain/UIVector/Prediction/ExamineAgent.hs
-  ghc-options:      -Wall -Werror
-  build-depends:
-                    app-settings,
-                    array,
-                    base,
-                    bytestring,
-                    cereal,
-                    colour,
-                    cond,
-                    containers,
-                    creatur,
-                    creatur-uivector-wains,
-                    creatur-wains,
-                    deepseq,
-                    directory,
-                    filepath,
-                    lens,
-                    MonadRandom,
-                    mtl,
-                    old-locale,
-                    random,
-                    som,
-                    split,
-                    time,
-                    transformers,
-                    unix,
-                    vector,
-                    zlib
-  hs-source-dirs:   src
-  other-modules:    ALife.Creatur.Wain.UIVector.Prediction.Action
-                    ALife.Creatur.Wain.UIVector.Prediction.DataSource
-                    ALife.Creatur.Wain.UIVector.Prediction.Experiment
-                    ALife.Creatur.Wain.UIVector.Prediction.ResponseTweaker
-                    ALife.Creatur.Wain.UIVector.Prediction.Universe
-                    Paths_exp_uivector_prediction_wains
-
-executable exp-uivector-prediction-brain-report
-  main-is:          ALife/Creatur/Wain/UIVector/Prediction/BrainReport.hs
-  ghc-options:      -Wall -Werror
-  build-depends:
-                    app-settings,
-                    array,
-                    base,
-                    bytestring,
-                    cereal,
-                    colour,
-                    cond,
-                    containers,
-                    creatur,
-                    creatur-uivector-wains,
-                    creatur-wains,
-                    deepseq,
-                    directory,
-                    filepath,
-                    lens,
-                    MonadRandom,
-                    mtl,
-                    old-locale,
-                    random,
-                    som,
-                    split,
-                    time,
-                    transformers,
-                    unix,
-                    vector,
-                    zlib
-  hs-source-dirs:   src
-  other-modules:    ALife.Creatur.Wain.UIVector.Prediction.Action
-                    ALife.Creatur.Wain.UIVector.Prediction.DataSource
-                    ALife.Creatur.Wain.UIVector.Prediction.Experiment
-                    ALife.Creatur.Wain.UIVector.Prediction.ResponseTweaker
-                    ALife.Creatur.Wain.UIVector.Prediction.Universe
-                    Paths_exp_uivector_prediction_wains
-
-Test-suite exp-uivector-prediction-wains-tests
-  Type:             exitcode-stdio-1.0
-  Main-is:          Main.hs
-  GHC-Options:      -Wall -fno-warn-orphans
-  Hs-source-dirs:   test, src
-  build-depends:
-                    app-settings,
-                    array,
-                    base,
-                    bytestring,
-                    cereal,
-                    colour,
-                    cond,
-                    containers,
-                    creatur,
-                    creatur-uivector-wains,
-                    creatur-wains,
-                    creatur-wains-test-utils,
-                    deepseq,
-                    directory,
-                    filepath,
-                    lens,
-                    MonadRandom,
-                    mtl,
-                    random,
-                    som,
-                    split,
-                    test-framework,
-                    test-framework-hunit,
-                    test-framework-quickcheck2,
-                    transformers,
-                    vector,
-                    QuickCheck
-  other-modules:    ALife.Creatur.Wain.UIVector.Prediction.Action
-                    ALife.Creatur.Wain.UIVector.Prediction.DataSource
-                    ALife.Creatur.Wain.UIVector.Prediction.Experiment
-                    ALife.Creatur.Wain.UIVector.Prediction.ResponseTweaker
-                    ALife.Creatur.Wain.UIVector.Prediction.Universe
-                    ALife.Creatur.Wain.UIVector.Prediction.ActionQC
-                    ALife.Creatur.Wain.UIVector.Prediction.ExperimentQC
-                    Paths_exp_uivector_prediction_wains
+name:           exp-uivector-prediction-wains
+version:        1.8
+description:    Please see the README on GitHub at <https://github.com/mhwombat/exp-uivector-prediction-wains#readme>
+homepage:       https://github.com/mhwombat/exp-uivector-prediction-wains#readme
+bug-reports:    https://github.com/mhwombat/exp-uivector-prediction-wains/issues
+author:         Amy de Buitléir
+maintainer:     amy@nualeargais.ie
+copyright:      2018 Amy de Buitléir
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+cabal-version:  >= 1.10
+extra-source-files:
+    ChangeLog.md
+    README.md
 
 source-repository head
-  type:     git
+  type: git
   location: https://github.com/mhwombat/exp-uivector-prediction-wains
+
+library
+  exposed-modules:
+      ALife.Creatur.Wain.UIVector.Prediction.Action
+      ALife.Creatur.Wain.UIVector.Prediction.DataSource
+      ALife.Creatur.Wain.UIVector.Prediction.Experiment
+      ALife.Creatur.Wain.UIVector.Prediction.ResponseTweaker
+      ALife.Creatur.Wain.UIVector.Prediction.Universe
+  other-modules:
+      Paths_exp_uivector_prediction_wains
+  hs-source-dirs:
+      src
+  build-depends:
+      MonadRandom
+    , app-settings
+    , base >=4.7 && <5
+    , cereal
+    , cond
+    , containers
+    , creatur
+    , creatur-uivector-wains
+    , creatur-wains
+    , deepseq
+    , directory
+    , filepath
+    , lens
+    , mtl
+    , random
+    , split
+  default-language: Haskell2010
+
+executable exp-uivector-prediction-wains-agent-csv
+  main-is: Main.hs
+  other-modules:
+      Paths_exp_uivector_prediction_wains
+  hs-source-dirs:
+      appAgentCSV
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , creatur-wains
+    , exp-uivector-prediction-wains
+  default-language: Haskell2010
+
+executable exp-uivector-prediction-wains-brain-report
+  main-is: Main.hs
+  other-modules:
+      Paths_exp_uivector_prediction_wains
+  hs-source-dirs:
+      appBrainReport
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , containers
+    , creatur
+    , creatur-wains
+    , exp-uivector-prediction-wains
+    , lens
+  default-language: Haskell2010
+
+executable exp-uivector-prediction-wains-daemon
+  main-is: Main.hs
+  other-modules:
+      Paths_exp_uivector_prediction_wains
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , creatur
+    , exp-uivector-prediction-wains
+    , hdaemonize
+    , lens
+    , mtl
+  default-language: Haskell2010
+
+executable exp-uivector-prediction-wains-examine-agent
+  main-is: Main.hs
+  other-modules:
+      Paths_exp_uivector_prediction_wains
+  hs-source-dirs:
+      appExamineAgent
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , creatur-wains
+    , exp-uivector-prediction-wains
+  default-language: Haskell2010
+
+executable exp-uivector-prediction-wains-init
+  main-is: Main.hs
+  other-modules:
+      Paths_exp_uivector_prediction_wains
+  hs-source-dirs:
+      appGenPop
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      MonadRandom
+    , base >=4.7 && <5
+    , creatur
+    , creatur-wains
+    , exp-uivector-prediction-wains
+    , lens
+    , mtl
+  default-language: Haskell2010
+
+executable exp-uivector-prediction-wains-interactive
+  main-is: Main.hs
+  other-modules:
+      Paths_exp_uivector_prediction_wains
+  hs-source-dirs:
+      appInteractive
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , creatur
+    , exp-uivector-prediction-wains
+    , lens
+    , mtl
+  default-language: Haskell2010
+
+test-suite exp-uivector-prediction-wains-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      ALife.Creatur.Wain.UIVector.Prediction.ActionQC
+      ALife.Creatur.Wain.UIVector.Prediction.ExperimentQC
+      Paths_exp_uivector_prediction_wains
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      QuickCheck
+    , base >=4.7 && <5
+    , creatur-uivector-wains
+    , creatur-wains
+    , creatur-wains-test-utils
+    , exp-uivector-prediction-wains
+    , test-framework
+    , test-framework-quickcheck2
+  default-language: Haskell2010

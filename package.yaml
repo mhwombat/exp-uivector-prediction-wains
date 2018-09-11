@@ -1,0 +1,138 @@
+name:                exp-uivector-prediction-wains
+version:             1.8
+github:              "mhwombat/exp-uivector-prediction-wains"
+license:             BSD3
+author:              "Amy de Buitléir"
+maintainer:          "amy@nualeargais.ie"
+copyright:           "2018 Amy de Buitléir"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/mhwombat/exp-uivector-prediction-wains#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+
+library:
+    source-dirs: src
+    dependencies:
+    - app-settings
+    - cereal
+    - cond
+    - containers
+    - creatur
+    - creatur-wains
+    - creatur-uivector-wains
+    - deepseq
+    - directory
+    - filepath
+    - lens
+    - MonadRandom
+    - mtl
+    - random
+    - split
+
+executables:
+  exp-uivector-prediction-wains-daemon:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - exp-uivector-prediction-wains
+    - creatur
+    - hdaemonize
+    - lens
+    - mtl
+
+  exp-uivector-prediction-wains-init:
+    main:                Main.hs
+    source-dirs:         appGenPop
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - exp-uivector-prediction-wains
+    - creatur
+    - creatur-wains
+    - lens
+    - MonadRandom
+    - mtl
+
+  exp-uivector-prediction-wains-agent-csv:
+    main:                Main.hs
+    source-dirs:         appAgentCSV
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - exp-uivector-prediction-wains
+    - creatur-wains
+
+  exp-uivector-prediction-wains-brain-report:
+    main:                Main.hs
+    source-dirs:         appBrainReport
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - exp-uivector-prediction-wains
+    - creatur
+    - creatur-wains
+    - lens
+    - containers
+
+  exp-uivector-prediction-wains-examine-agent:
+    main:                Main.hs
+    source-dirs:         appExamineAgent
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - exp-uivector-prediction-wains
+    - creatur-wains
+
+  exp-uivector-prediction-wains-interactive:
+    main:                Main.hs
+    source-dirs:         appInteractive
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - exp-uivector-prediction-wains
+    - creatur
+    - lens
+    - mtl
+
+tests:
+  exp-uivector-prediction-wains-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - exp-uivector-prediction-wains
+    - creatur-uivector-wains
+    - creatur-wains
+    - creatur-wains-test-utils
+    - QuickCheck
+    - test-framework
+    - test-framework-quickcheck2

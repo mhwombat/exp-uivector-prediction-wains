@@ -26,6 +26,7 @@ import ALife.Creatur.Wain.GeneticSOM (Difference, Tweaker(..))
 import ALife.Creatur.Wain.PlusMinusOne (adjustPM1Vector)
 import  ALife.Creatur.Wain.Pretty (Pretty)
 import ALife.Creatur.Wain.Response (Response(..), labelSimilarity)
+import ALife.Creatur.Wain.Statistics (Statistical(..), prefix)
 import ALife.Creatur.Wain.UIVector.Prediction.Action (Action,
   actionDiff, makeActionSimilar)
 import ALife.Creatur.Wain.UnitInterval (UIDouble)
@@ -48,6 +49,9 @@ instance Tweaker ResponseTweaker where
   type Pattern ResponseTweaker = Response Action
   diff (ResponseTweaker ws) = responseDiff ws
   adjust _ = makeResponseSimilar
+
+instance Statistical ResponseTweaker where
+  stats (ResponseTweaker ws) = map (prefix "tweaker weight") . stats $ ws
 
 -- | @'responseDiff' x y@ compares the response patterns
 --   @x@ and @y@, and returns a number between 0 and 1, representing

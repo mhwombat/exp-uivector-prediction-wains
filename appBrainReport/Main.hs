@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------
 -- |
--- Module      :  ALife.Creatur.Wain.UIVector.Prediction.BrainReport
+-- Module      :  Main
 -- Copyright   :  (c) Amy de Buitléir 2013-2017
 -- License     :  BSD-style
 -- Maintainer  :  amy@nualeargais.ie

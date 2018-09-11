@@ -24,6 +24,7 @@ import ALife.Creatur.Genetics.BRGCWord8 (Genetic)
 import ALife.Creatur.Genetics.Diploid (Diploid)
 import ALife.Creatur.Wain.Pretty (Pretty(..))
 import ALife.Creatur.Wain.GeneticSOM (Difference)
+import ALife.Creatur.Wain.Statistics (Statistical(..), dStat)
 import ALife.Creatur.Wain.UnitInterval (UIDouble, forceDoubleToUI,
   uiToDouble, doubleToUI, adjustIntegral)
 import Data.Serialize (Serialize)
@@ -65,6 +66,9 @@ instance Random Action where
     where (z, g') = randomR (x, y) g
   random g = (Add z, g')
     where (z, g') = random g
+
+instance Statistical Action where
+  stats a = [dStat "action" . toDelta $ a]
 
 toDelta :: Action -> Double
 toDelta (Add z) = (fromIntegral z - mid)*aBit
