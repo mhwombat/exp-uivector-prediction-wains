@@ -35,23 +35,21 @@ resolver: lts-12.6
 #  - wai
 packages:
 - '.'
-- '../creatur'
-# - location:
-#     git: git@github.com:mhwombat/creatur.git
-#     commit: d33fa936842c48118fb9e380b0cd6bd3cd29b27c
-#   extra-dep: true
-- '../creatur-wains'
-# - location:
-#     git: git@github.com:mhwombat/creatur-wains.git
-#     commit: 9e3dca33c7e4b569ad3ebd83978ba0b47b460ba5
-#   extra-dep: true
+- location:
+    git: git@github.com:mhwombat/creatur.git
+    commit: d3ee5a175c467913ec3db60feb9ca66bf2858f4d
+  extra-dep: true
+- location:
+    git: git@github.com:mhwombat/creatur-wains.git
+    commit: 69e17d9999fd47fd659a58bf662bfef8b78dd4b0
+  extra-dep: true
 - location:
     git: git@github.com:mhwombat/creatur-wains-test-utils.git
     commit: master
   extra-dep: true
 - location:
     git: git@github.com:mhwombat/creatur-uivector-wains.git
-    commit: 1df1edd21139841ccb123c4f31400f3822bf1420
+    commit: 4ac5027776bf0ccf7042769c32d09da5ab7eac2e
   extra-dep: true
 # Dependency packages to be pulled from upstream that are not in the resolver
 # using the same syntax as the packages field.
