@@ -1,7 +1,7 @@
 ------------------------------------------------------------------------
 -- |
 -- Module      :  ALife.Creatur.Wain.UIVector.Prediction.ActionQC
--- Copyright   :  (c) Amy de Buitléir 2013-2017
+-- Copyright   :  (c) Amy de Buitléir 2013-2018
 -- License     :  BSD-style
 -- Maintainer  :  amy@nualeargais.ie
 -- Stability   :  experimental
@@ -10,6 +10,7 @@
 -- QuickCheck tests.
 --
 ------------------------------------------------------------------------
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module ALife.Creatur.Wain.UIVector.Prediction.ActionQC
   (
     test

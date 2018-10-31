@@ -18,7 +18,7 @@
 #
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
-resolver: lts-12.6
+resolver: lts-12.16
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -34,31 +34,23 @@ resolver: lts-12.6
 #  - auto-update
 #  - wai
 packages:
-- '.'
-- location:
-    git: git@github.com:mhwombat/creatur.git
-    commit: d3ee5a175c467913ec3db60feb9ca66bf2858f4d
-  extra-dep: true
-- location:
-    git: git@github.com:mhwombat/creatur-wains.git
-    commit: 69e17d9999fd47fd659a58bf662bfef8b78dd4b0
-  extra-dep: true
-- location:
-    git: git@github.com:mhwombat/creatur-wains-test-utils.git
-    commit: master
-  extra-dep: true
-- location:
-    git: git@github.com:mhwombat/creatur-uivector-wains.git
-    commit: 4ac5027776bf0ccf7042769c32d09da5ab7eac2e
-  extra-dep: true
+- .
 # Dependency packages to be pulled from upstream that are not in the resolver
 # using the same syntax as the packages field.
 # (e.g., acme-missiles-0.3)
 extra-deps:
 - assert-0.0.1.2
+- creatur-5.9.27
 - gray-extended-1.5.2
 - grid-7.8.9
-- som-9.0.4
+- numeric-tools-0.2.0.1
+- som-10.0.1
+- git: git@github.com:mhwombat/creatur-wains.git
+  commit: 5e18513682976564cd13a07a642ac8dd5c498068
+- git: https://github.com/mhwombat/creatur-wains-test-utils.git
+  commit: 4c4eabec150c1fa3a6192a6077fa34ed28422c81
+- git: https://github.com/mhwombat/creatur-uivector-wains.git
+  commit: bff63d12696c78739f2f2ce5f81955f588bf92a6
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

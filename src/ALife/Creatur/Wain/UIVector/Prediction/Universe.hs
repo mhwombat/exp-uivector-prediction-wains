@@ -1,7 +1,7 @@
 ------------------------------------------------------------------------
 -- |
 -- Module      :  ALife.Creatur.Wain.UIVector.Prediction.Universe
--- Copyright   :  (c) Amy de Buitléir 2012-2017
+-- Copyright   :  (c) Amy de Buitléir 2012-2018
 -- License     :  BSD-style
 -- Maintainer  :  amy@nualeargais.ie
 -- Stability   :  experimental
@@ -34,10 +34,12 @@ module ALife.Creatur.Wain.UIVector.Prediction.Universe
     uDataSource,
     uShowClassifierModels,
     uShowPredictorModels,
-    uShowPredictions,
+    uShowClassificationReport,
     uShowScenarioReport,
-    uShowResponseReport,
-    uShowDecisionReport,
+    uShowPredictionReport,
+    uShowActionReport,
+    uShowReflectionReport,
+    uShowImprintReport,
     uSleepBetweenTasks,
     uVectorLength,
     uClassifierSizeRange,
@@ -126,10 +128,12 @@ data Universe a = Universe
     _uDataSource :: DataSource,
     _uShowClassifierModels :: Bool,
     _uShowPredictorModels :: Bool,
-    _uShowPredictions :: Bool,
+    _uShowClassificationReport :: Bool,
     _uShowScenarioReport :: Bool,
-    _uShowResponseReport :: Bool,
-    _uShowDecisionReport :: Bool,
+    _uShowPredictionReport :: Bool,
+    _uShowActionReport :: Bool,
+    _uShowReflectionReport :: Bool,
+    _uShowImprintReport :: Bool,
     _uSleepBetweenTasks :: Int,
     _uVectorLength :: Int,
     _uClassifierSizeRange :: (Word64, Word64),
@@ -214,17 +218,23 @@ cShowClassifierModels = requiredSetting "showClassifierModels"
 cShowPredictorModels :: Setting Bool
 cShowPredictorModels = requiredSetting "showPredictorModels"
 
-cShowPredictions :: Setting Bool
-cShowPredictions = requiredSetting "showPredictions"
+cShowClassificationReport :: Setting Bool
+cShowClassificationReport = requiredSetting "showClassificationReport"
 
 cShowScenarioReport :: Setting Bool
 cShowScenarioReport = requiredSetting "showScenarioReport"
 
-cShowResponseReport :: Setting Bool
-cShowResponseReport = requiredSetting "showResponseReport"
+cShowPredictionReport :: Setting Bool
+cShowPredictionReport = requiredSetting "showPredictionReport"
 
-cShowDecisionReport :: Setting Bool
-cShowDecisionReport = requiredSetting "showDecisionReport"
+cShowActionReport :: Setting Bool
+cShowActionReport = requiredSetting "showActionReport"
+
+cShowReflectionReport :: Setting Bool
+cShowReflectionReport = requiredSetting "showReflectionReport"
+
+cShowImprintReport :: Setting Bool
+cShowImprintReport = requiredSetting "showImprintReport"
 
 cSleepBetweenTasks :: Setting Int
 cSleepBetweenTasks = requiredSetting "sleepTimeBetweenTasks"
@@ -348,10 +358,12 @@ config2Universe getSetting =
       _uDataSource = mkDataSource dataFile readCounterFile,
       _uShowClassifierModels = getSetting cShowClassifierModels,
       _uShowPredictorModels = getSetting cShowPredictorModels,
-      _uShowPredictions = getSetting cShowPredictions,
+      _uShowClassificationReport = getSetting cShowClassificationReport,
       _uShowScenarioReport = getSetting cShowScenarioReport,
-      _uShowResponseReport = getSetting cShowResponseReport,
-      _uShowDecisionReport = getSetting cShowDecisionReport,
+      _uShowPredictionReport = getSetting cShowPredictionReport,
+      _uShowActionReport = getSetting cShowActionReport,
+      _uShowReflectionReport = getSetting cShowReflectionReport,
+      _uShowImprintReport = getSetting cShowImprintReport,
       _uSleepBetweenTasks = getSetting cSleepBetweenTasks,
       _uVectorLength = n,
       _uClassifierSizeRange = getSetting cClassifierSizeRange,

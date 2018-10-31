@@ -2,10 +2,10 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 19181fc2c22469cc787d687ca3f169a9769d036a491cba74d608682a02f7077a
+-- hash: 7346d8d3701fbd8a6c261d34954221d6e92a27786ea480c5c0997ba20e899069
 
 name:           exp-uivector-prediction-wains
-version:        1.8
+version:        1.9.0
 description:    Please see the README on GitHub at <https://github.com/mhwombat/exp-uivector-prediction-wains#readme>
 homepage:       https://github.com/mhwombat/exp-uivector-prediction-wains#readme
 bug-reports:    https://github.com/mhwombat/exp-uivector-prediction-wains/issues

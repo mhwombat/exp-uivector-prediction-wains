@@ -1,7 +1,7 @@
 ------------------------------------------------------------------------
 -- |
 -- Module      :  ALife.Creatur.Wain.UIVector.Prediction.Experiment
--- Copyright   :  (c) Amy de Buitléir 2012-2017
+-- Copyright   :  (c) Amy de Buitléir 2012-2018
 -- License     :  BSD-style
 -- Maintainer  :  amy@nualeargais.ie
 -- Stability   :  experimental
@@ -33,17 +33,15 @@ import ALife.Creatur (agentId, isAlive, programVersion)
 import ALife.Creatur.Persistent (getPS, putPS)
 import ALife.Creatur.Task (checkPopSize, requestShutdown)
 import qualified ALife.Creatur.Wain as W
-import ALife.Creatur.Wain.Brain (makeBrain, predictor, classifier,
-  scenarioReport, responseReport, decisionReport)
+import qualified ALife.Creatur.Wain.Brain as B
 import ALife.Creatur.Wain.Checkpoint (enforceAll)
 import qualified ALife.Creatur.Wain.Classifier as Cl
 import qualified ALife.Creatur.Wain.Predictor as P
-import ALife.Creatur.Wain.GeneticSOM (RandomLearningParams(..),
-  randomLearningFunction, schemaQuality, modelMap, numModels,
-  tweaker)
-import ALife.Creatur.Wain.PlusMinusOne (PM1Double, pm1ToDouble)
+import ALife.Creatur.Wain.GeneticSOM (LearningParamRanges(..),
+  randomLearningParams, schemaQuality, numModels, tweaker)
 import ALife.Creatur.Wain.PersistentStatistics (updateStats, readStats,
   clearStats)
+import ALife.Creatur.Wain.UIVector.Pattern (Pattern)
 import qualified ALife.Creatur.Wain.UIVector.Prediction.Universe as U
 import ALife.Creatur.Wain.Pretty (pretty)
 import ALife.Creatur.Wain.Raw (raw)
@@ -69,15 +67,12 @@ import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Random (Rand, RandomGen, getRandom, getRandomR,
   getRandomRs, getRandoms, evalRandIO)
 import Control.Monad.State.Lazy (StateT, execStateT, get, put)
-import Data.List (intercalate, minimumBy, lookup)
-import Data.Map (toList)
-import Data.Ord (comparing)
+import Data.List (intercalate, lookup)
 import Data.Version (showVersion)
 import Data.Word (Word64)
 import Paths_exp_uivector_prediction_wains (version)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath (dropFileName)
-import Text.Printf (printf)
 
 versionInfo :: String
 versionInfo
@@ -96,20 +91,20 @@ randomPatternWain
       -> Rand r PatternWain
 randomPatternWain wName u classifierSize predictorSize = do
   let k = view U.uVectorLength u
-  let fcp = RandomLearningParams
+  let fcp = LearningParamRanges
               { _r0Range = view U.uClassifierR0Range u,
                 _rfRange = view U.uClassifierRfRange u,
                 _tfRange = view U.uClassifierTfRange u }
-  fc <- randomLearningFunction fcp
+  fc <- randomLearningParams fcp
   classifierThreshold <- getRandomR (view U.uClassifierThresholdRange u)
   ws <- (makeWeights . take (2*k)) <$> getRandoms
   let c = Cl.buildClassifier fc classifierSize classifierThreshold
             (PatternTweaker ws)
-  let fdp = RandomLearningParams
+  let fdp = LearningParamRanges
               { _r0Range = view U.uPredictorR0Range u,
                 _rfRange = view U.uPredictorRfRange u,
                 _tfRange = view U.uPredictorTfRange u }
-  fd <- randomLearningFunction fdp
+  fd <- randomLearningParams fdp
   predictorThreshold <- getRandomR (view U.uPredictorThresholdRange u)
   rtw <- (ResponseTweaker . makeWeights . take 2) <$> getRandoms
   let p = P.buildPredictor fd predictorSize predictorThreshold rtw
@@ -121,12 +116,12 @@ randomPatternWain wName u classifierSize predictorSize = do
   let (Right mr) = makeMuser dos dp
   ios <- take 4 <$> getRandomRs (view U.uImprintOutcomeRange u)
   rds <- take 4 <$> getRandomRs (view U.uReinforcementDeltasRange u)
-  let (Right wBrain) = makeBrain c mr p hw t s ios rds
+  let (Right wBrain) = B.makeBrain c mr p hw t s ios rds
   wDevotion <- getRandomR . view U.uDevotionRange $ u
   wAgeOfMaturity <- getRandomR . view U.uMaturityRange $ u
   let wPassionDelta = 0
   let wBoredomDelta = 0
-  let wAppearance = replicate k $ doubleToUI 0
+  let wAppearance = replicate k 0
   return $ W.buildWainAndGenerateGenome wName wAppearance wBrain
     wDevotion wAgeOfMaturity wPassionDelta wBoredomDelta
 
@@ -350,7 +345,7 @@ customStats w = Stats.stats w
        Stats.dStat "predictorScenarioWeight" . uiToDouble $
          ws `weightAt` 1
      ]
-  where (ResponseTweaker ws) = view (W.brain . predictor . tweaker) w
+  where (ResponseTweaker ws) = view (W.brain . B.predictor . tweaker) w
 
 fillInSummary :: Summary -> Summary
 fillInSummary s = s
@@ -400,7 +395,7 @@ measureMetabolism = do
 
 metabMetric :: Double -> PatternWain -> Double
 metabMetric scale w = scale * n
-  where n = fromIntegral . numModels . view (W.brain . classifier) $ w
+  where n = fromIntegral . numModels . view (W.brain . B.classifier) $ w
 
 runMetabolism :: StateT Experiment IO ()
 runMetabolism = do
@@ -453,55 +448,46 @@ rewardPrediction = do
       letSubjectReflect a r
 
 chooseAction3
-  :: PatternWain -> [UIDouble]
+  :: PatternWain -> Pattern
     -> StateT (U.Universe PatternWain) IO
-        (UIDouble, Int, Response Action, PatternWain)
+        (W.DecisionReport Pattern Action, Response Action, PatternWain)
 chooseAction3 w vs = do
   whenM (use U.uShowClassifierModels) $ do
     U.writeToLog "begin classifier models"
-    describeClassifierModels w
+    mapM_ U.writeToLog $ W.prettyClassifierModels w
     U.writeToLog "end classifier models"
   whenM (use U.uShowPredictorModels) $ do
     U.writeToLog "begin predictor models"
-    describePredictorModels w
+    mapM_ U.writeToLog $ W.prettyPredictorModels w
     U.writeToLog "end predictor models"
-  let (ldss, sps, rplos, aohs, r, w') = W.chooseAction [vs] w
-  let (_, dObjNovelty, dObjNoveltyAdj)
-          = analyseClassification ldss w
-  whenM (use U.uShowPredictions) $ do
-    U.writeToLog "begin predictions"
-    describeOutcomes w rplos
-    U.writeToLog "end predictions"
+  let (decisionReport, r, w') = W.chooseAction [vs] w
+  let dObjNoveltyAdj = head $ W.novelties decisionReport
   U.writeToLog $ "To " ++ agentId w
-    ++ ", the vector has adjusted novelty " ++ show dObjNoveltyAdj
+    ++ ", the vector has novelty " ++ show dObjNoveltyAdj
+  whenM (use U.uShowClassificationReport) $ do
+    U.writeToLog "begin classifier report"
+    mapM_ U.writeToLog $ W.prettyClassificationReport w decisionReport
+    U.writeToLog "end classifier report"
   whenM (use U.uShowScenarioReport) $ do
     U.writeToLog "begin scenario report"
-    mapM_ U.writeToLog $ scenarioReport sps
+    mapM_ U.writeToLog $ W.prettyScenarioReport w decisionReport
     U.writeToLog "end scenario report"
-  whenM (use U.uShowResponseReport) $ do
-    U.writeToLog "begin response report"
-    mapM_ U.writeToLog $ responseReport rplos
-    U.writeToLog "end response report"
-  whenM (use U.uShowDecisionReport) $ do
-    U.writeToLog "begin decision report"
-    mapM_ U.writeToLog $ decisionReport aohs
-    U.writeToLog "end decision report"
+  whenM (use U.uShowPredictionReport) $ do
+    U.writeToLog "begin predictor report"
+    mapM_ U.writeToLog $ W.prettyPredictionReport w decisionReport
+    U.writeToLog "end predictor report"
+  whenM (use U.uShowActionReport) $ do
+    U.writeToLog "begin action report"
+    mapM_ U.writeToLog $ W.prettyActionReport w decisionReport
+    U.writeToLog "end action report"
   U.writeToLog $ agentId w ++ " chooses to " ++ pretty (view action r)
     ++ " predicting the outcomes " ++ pretty (view outcomes r)
-  return (dObjNovelty, dObjNoveltyAdj, r, w')
+  return (decisionReport, r, w')
 
-analyseClassification
-  :: [[(Cl.Label, Cl.Difference)]] -> PatternWain
-    -> (Cl.Label, Cl.Difference, Int)
-analyseClassification ldss w = (dObjLabel, dObjNovelty, dObjNoveltyAdj)
-  where ((dObjLabel, dObjNovelty):_)
-          = map (minimumBy (comparing snd)) ldss
-        dObjNoveltyAdj
-          = round $ uiToDouble dObjNovelty * fromIntegral (view W.age w)
 
 lookup3 :: Eq a => a -> [(a, b, c)] -> Maybe (b, c)
 lookup3 k ((a, b, c):xs) | a == k    = Just (b, c)
-                            | otherwise = lookup3 k xs
+                         | otherwise = lookup3 k xs
 lookup3 _ [] = Nothing
 
 thirdOfThree :: (a, b, c) -> c
@@ -511,10 +497,10 @@ makePrediction :: StateT Experiment IO ()
 makePrediction = do
   a <- use subject
   dObj <- zoom (universe . U.uCurrVector) getPS
-  (dObjNovelty, dObjNoveltyAdj, r, a')
+  (decisionReport, r, a')
     <- zoom universe $ chooseAction3 a dObj
-  assign (summary.rVectorNovelty) dObjNovelty
-  assign (summary.rVectorAdjustedNovelty) dObjNoveltyAdj
+  assign (summary.rVectorNovelty) (head $ W.bmuDiffs decisionReport)
+  assign (summary.rVectorAdjustedNovelty) (head $ W.novelties decisionReport)
   assign subject a'
   ps <- zoom (universe . U.uNewPredictions) getPS
   when (null dObj) $
@@ -525,29 +511,6 @@ makePrediction = do
     agentId a ++ " predicts " ++ show xPredicted
   let ps' = (agentId a, r, xPredicted) : ps
   zoom (universe . U.uNewPredictions) $ putPS ps'
-
-describeClassifierModels
-  :: PatternWain -> StateT (U.Universe PatternWain) IO ()
-describeClassifierModels w = mapM_ (U.writeToLog . f) ms
-  where ms = toList . modelMap . view (W.brain . classifier) $ w
-        f (l, r) = view W.name w ++ "'s classifier model " ++ show l
-                     ++ "=" ++ pretty r
-
-describePredictorModels
-  :: PatternWain -> StateT (U.Universe PatternWain) IO ()
-describePredictorModels w = mapM_ (U.writeToLog . f) ms
-  where ms = toList . modelMap . view (W.brain . predictor) $ w
-        f (l, r) = view W.name w ++ "'s predictor model " ++ show l
-                     ++ "=" ++ pretty r
-
-describeOutcomes
-  :: PatternWain -> [(Response Action, UIDouble, UIDouble, P.Label, [PM1Double])]
-    -> StateT (U.Universe PatternWain) IO ()
-describeOutcomes w = mapM_ (U.writeToLog . f)
-  where f (r, _, _, l, _) = view W.name w ++ "'s predicted outcome of "
-                     ++ pretty (view action r) ++ " is "
-                     ++ intercalate " " (map (printf "%.3f" . pm1ToDouble) (view outcomes r))
-                     ++ " from model " ++ show l
 
 --
 -- Utility functions
@@ -659,16 +622,30 @@ letSubjectReflect
   :: PatternWain -> Response Action -> StateT Experiment IO ()
 letSubjectReflect wBefore r = do
   w <- use subject
+  report $ "The action taken was " ++ pretty (view action r)
+  -- Learn the outcome of the action taken
   p <- zoom (universe . U.uPrevVector) getPS
-  let (w', rReflect, err) = W.reflect [p] r wBefore w
+  let (rReflect, w') = W.reflect [p] r wBefore w
+  rReportWanted <- use (universe . U.uShowReflectionReport)
+  when rReportWanted $ do
+    report "begin reflection report"
+    mapM_ report $ W.prettyReflectionReport w rReflect
+    report "end reflection report"
+  -- Learn the correct response
   v1 <- zoom (universe . U.uPrevVector) getPS
   let x1 = head v1
   x2 <- head <$> zoom (universe . U.uCurrVector) getPS
   let a = postdict x1 x2
-  let (_, _, _, _, w'') = W.imprint [v1] a w'
+  report $ "The correct action would have been " ++ pretty a
+  let (rImprint, w'') = W.imprint [v1] a w'
+  iReportWanted <- use (universe . U.uShowImprintReport)
+  when iReportWanted $ do
+    report "begin imprint report"
+    mapM_ report $ W.prettyImprintReport w rImprint
+    report "end imprint report"
+  -- Update the stats
   assign subject w''
-  assign (summary . rRewardPredictionErr) err
-  report $ "Reflecting: " ++ pretty rReflect
+  assign (summary . rRewardPredictionErr) $ W.happinessError rReflect
 
 writeRawStats
   :: String -> FilePath -> [Stats.Statistic]
