@@ -461,7 +461,7 @@ chooseAction3 w vs = do
     mapM_ U.writeToLog $ W.prettyPredictorModels w
     U.writeToLog "end predictor models"
   let (decisionReport, r, w') = W.chooseAction [vs] w
-  let dObjNoveltyAdj = head $ W.novelties decisionReport
+  let dObjNoveltyAdj = head $ W.adjNovelties decisionReport
   U.writeToLog $ "To " ++ agentId w
     ++ ", the vector has novelty " ++ show dObjNoveltyAdj
   whenM (use U.uShowClassificationReport) $ do
@@ -499,8 +499,8 @@ makePrediction = do
   dObj <- zoom (universe . U.uCurrVector) getPS
   (decisionReport, r, a')
     <- zoom universe $ chooseAction3 a dObj
-  assign (summary.rVectorNovelty) (head $ W.bmuDiffs decisionReport)
-  assign (summary.rVectorAdjustedNovelty) (head $ W.novelties decisionReport)
+  assign (summary.rVectorNovelty) (head $ W.novelties decisionReport)
+  assign (summary.rVectorAdjustedNovelty) (head $ W.adjNovelties decisionReport)
   assign subject a'
   ps <- zoom (universe . U.uNewPredictions) getPS
   when (null dObj) $

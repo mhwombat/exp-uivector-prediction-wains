@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Create a temporary directory for working files.
+base=${0%/*}
+TMPDIR=".${0##*/}-$$" && mkdir "$TMPDIR"
+SOURCE=$TMPDIR/source
+
+fhs | grep -v Universe.hs | xargs cat > ${SOURCE}
+
+VARS=`find src -name Universe.hs | \
+    xargs grep '  _' | \
+    sed 's/ *::.*//; s/ *=.*//; s/ //g; s/_//' | \
+    sort -u`
+
+for VAR in ${VARS}
+do
+    # echo ${VAR}
+    grep -c "${VAR}" ${SOURCE} > /dev/null
+    result=$?
+    # echo "result=${result}"
+    if [ ${result} == 1 ]
+    then
+        echo "${VAR} not used?"
+    fi
+done
+
+# Remove the temporary directory
+rm -rf $TMPDIR

@@ -1,0 +1,32 @@
+#!/bin/bash
+source ./config.sh
+
+function getStats {
+  tail -n +1 $log -f | \
+      grep 'actual=' | \
+      sed 's/............+....\t//; s/\tactual=/,/; s/ predicted=/,/; s/ err=/,/; 1itime,actual,predicted,err' > wain-accuracy.csv
+}
+
+
+function drawPlot {
+  until [ 0 -eq 1 ]; do
+    sleep 15
+    Rscript accuracy.R
+    Rscript accuracyPlot.R
+  done
+}
+
+_term() { 
+  echo "Caught SIGINT signal; killing $child" 
+  kill -9 "$child"
+}
+
+trap _term SIGINT
+
+drawPlot &
+child=$! 
+echo I am $$
+echo Launched child $child
+getStats
+
+wait "$child"

@@ -1,0 +1,93 @@
+testing examine-agents
+======================
+stack exec exp-uivector-prediction-examine tempAgents/db
+
+stack ghci creatur-uivector-wains
+:set -isrc:test:./.stack-work/dist/x86_64-linux/Cabal-2.0.0.2/build/exp-uivector-prediction-examine/autogen
+:l ./src/ALife/Creatur/Wain/UIVector/Prediction/ExamineAgent.hs
+ws <- fetchWains "/home/eamybut/néal/exp-uivector-prediction-wains/tempAgents/db"  :: IO [PatternWain]
+
+import ALife.Creatur.Wain.UIVector.ExamineAgent
+import Control.Monad (liftM, filterM)
+import System.Posix (isRegularFile)
+ws <- mapM fetchWain fs :: IO [PatternWain]
+fs <- getDirectoryContents "/home/eamybut/néal/exp-uivector-prediction-wains/tempAgents/db"
+let fs' = map ("/home/eamybut/néal/exp-uivector-prediction-wains/tempAgents/db/" ++) fs
+fs'' <- filterM (liftM isRegularFile . getFileStatus) fs'
+ws <- mapM fetchWain fs'' :: IO [PatternWain]
+
+
+
+stack ghci creatur-wains
+:set -isrc:test:./.stack-work/dist/x86_64-linux/Cabal-2.0.0.2/build/exp-uivector-prediction-examine/autogen
+:l ./src/ALife/Creatur/Wain/UIVector/Prediction/ExamineAgent.hs
+ws <- fetchObjects "/home/eamybut/néal/exp-uivector-prediction-wains/tempAgents/db"  :: IO [PatternWain]
+
+import ALife.Creatur (agentId)
+import ALife.Creatur.Wain
+import ALife.Creatur.Wain.Brain
+import ALife.Creatur.Wain.GeneticSOM
+import ALife.Creatur.Wain.Pretty
+import ALife.Creatur.Wain.UnitInterval
+import qualified Data.ByteString as BS
+import qualified Data.Serialize as DS
+import Control.Lens
+import Control.Monad (liftM, filterM)
+import System.Directory (getDirectoryContents)
+import System.Posix (isRegularFile, isDirectory)
+import System.Posix.Files (getFileStatus)
+import qualified Data.Map.Strict as M
+import Text.Printf (printf)
+
+getDirectoryContents "/home/eamybut/néal/exp-uivector-prediction-wains/tempAgents/db"
+
+
+constant.csv
+============
+let ts = [0..999] :: [Int]
+let f _ = 0.5
+let ss = map (\t -> show t ++ ',' : show (f t)) ts
+writeFile "constant.csv" . unlines $ ss
+
+sin30.csv
+=========
+let ts = [0..9999] :: [Int]
+let f x = 0.5 + 0.5 * sin (2 * pi * fromIntegral (x `mod` 30)/30)
+let ss = map (\t -> show t ++ ',' : show (f t)) ts
+writeFile "sin30.csv" . unlines $ ss
+
+To produce plot, use R:
+
+require(ggplot2)
+d <- read.csv('sin30.csv')
+ggplot(d, aes(x=time,y=value)) + 
+  labs(x="time", y="actual value") +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0), limits=c(0,1)) +
+  theme_bw() +
+  theme(legend.justification=c(1,1), legend.position=c(0.95,0.5)) +
+  geom_line() +
+  geom_point()
+ggsave(file='sin30.pdf', width=8, height=7);
+
+sin30noise05.csv
+===============
+import Control.Monad.Random
+import ALife.Creatur.Wain.Util
+let ts = [0..9999] :: [Int]
+let f x = 0.5 + 0.5 * sin (2 * pi * fromIntegral (x `mod` 30)/30)
+let xs = map f ts
+ys <- getRandomRs (-0.05,0.05) :: IO [Double]
+let zs = map (enforceRange (0,1)) $ zipWith (+) xs ys
+let ss = zipWith (\t x -> show t ++ ',' : show x) ts zs
+writeFile "sin30noise05.csv" . unlines $ ss
+
+
+Debugging statistics
+====================
+grep 'time=2' ~/alife/amy/rawStatsFile > tempa
+sed 's/.*,age/age/' tempa > tempb
+sed 's/=[^,]*//g' tempb > tempc
+head -n 1 tempc > headers
+sed 's/[^,=]*=//g' tempb > tempd
+cat headers tempd > amy.csv
